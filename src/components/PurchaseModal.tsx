@@ -1,7 +1,16 @@
 import { useEffect, useState } from "react";
 import { fmtUZS, type Donation } from "../data/donations";
+import type { Transaction } from "../data/store";
 
-export default function PurchaseModal({ d, onClose }: { d: Donation | null; onClose: () => void }) {
+export default function PurchaseModal({
+  d,
+  onClose,
+  onAddTx,
+}: {
+  d: Donation | null;
+  onClose: () => void;
+  onAddTx: (player: string, pkgName: string, price: number, method: Transaction["method"]) => void;
+}) {
   const [nick, setNick] = useState("");
   const [step, setStep] = useState<"form" | "upload" | "success">("form");
   const [image, setImage] = useState<File | null>(null);
@@ -33,6 +42,9 @@ export default function PurchaseModal({ d, onClose }: { d: Donation | null; onCl
     
     setStep("success"); // Show success immediately for better UX
     window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
+
+    // Add to local store for admin panel
+    onAddTx(nick, d.name, d.price, "Payme"); // Default to Payme for now as per image logic
 
     try {
       const formData = new FormData();

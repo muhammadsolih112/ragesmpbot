@@ -157,27 +157,46 @@ export default function AdminPanel({
 
             {/* Visual Stats Bar */}
             <div className="rounded-3xl border border-orange-500/20 bg-white dark:bg-white/[0.03] p-6">
-              <h3 className="text-lg font-bold mb-4">Paketlar bo'yicha sotuv taqsimoti</h3>
-              <div className="space-y-4">
-                {["SMP Elite", "Rage+", "RagePro"].map((pkg) => {
-                  const count = allTxs.filter((t) => t.pkg === pkg && t.status === "To'langan").length;
-                  const max = Math.max(...["SMP Elite", "Rage+", "RagePro"].map((p) => allTxs.filter((x) => x.pkg === p && x.status === "To'langan").length), 1);
-                  const pct = (count / max) * 100;
-                  return (
-                    <div key={pkg} className="space-y-1">
-                      <div className="flex justify-between text-sm font-semibold">
-                        <span>{pkg}</span>
-                        <span className="text-neutral-500">{count} ta sotilgan</span>
+              <h3 className="text-lg font-bold mb-4">Sotuvlar taqsimoti</h3>
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                  <h4 className="text-xs uppercase tracking-widest text-neutral-500 font-bold">Paketlar</h4>
+                  {["SMP Elite", "Rage+", "RagePro"].map((pkg) => {
+                    const count = allTxs.filter((t) => t.pkg === pkg && t.status === "To'langan").length;
+                    const max = Math.max(...["SMP Elite", "Rage+", "RagePro"].map((p) => allTxs.filter((x) => x.pkg === p && x.status === "To'langan").length), 1);
+                    const pct = (count / max) * 100;
+                    return (
+                      <div key={pkg} className="space-y-1">
+                        <div className="flex justify-between text-sm font-semibold">
+                          <span>{pkg}</span>
+                          <span className="text-neutral-500">{count} ta</span>
+                        </div>
+                        <div className="h-2 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5">
+                          <div className="h-full rounded-full fire-gradient transition-all duration-1000" style={{ width: `${pct}%` }} />
+                        </div>
                       </div>
-                      <div className="h-3 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5 border border-orange-500/10">
-                        <div
-                          className="h-full rounded-full fire-gradient transition-all duration-1000"
-                          style={{ width: `${pct}%` }}
-                        />
+                    );
+                  })}
+                </div>
+                <div className="space-y-4">
+                  <h4 className="text-xs uppercase tracking-widest text-neutral-500 font-bold">Xizmatlar va Valyuta</h4>
+                  {["Unban", "Unmute", "10.000 Point", "1.000 Shards"].map((pkg) => {
+                    const count = allTxs.filter((t) => t.pkg === pkg && t.status === "To'langan").length;
+                    const max = Math.max(...["Unban", "Unmute", "10.000 Point", "1.000 Shards"].map((p) => allTxs.filter((x) => x.pkg === p && x.status === "To'langan").length), 1);
+                    const pct = (count / max) * 100;
+                    return (
+                      <div key={pkg} className="space-y-1">
+                        <div className="flex justify-between text-sm font-semibold">
+                          <span>{pkg}</span>
+                          <span className="text-neutral-500">{count} ta</span>
+                        </div>
+                        <div className="h-2 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5">
+                          <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-1000" style={{ width: `${pct}%` }} />
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

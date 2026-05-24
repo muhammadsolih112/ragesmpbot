@@ -15,7 +15,7 @@ export default function DonateCards({ onSelect }: { onSelect: (d: Donation) => v
   return (
     <section id="donate" className="relative py-12 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <Header />
+        <Header activeTab={activeTab} />
 
         {/* Tabs */}
         <div className="mt-8 flex justify-center gap-2 p-1 bg-orange-500/5 rounded-2xl border border-orange-500/10 max-w-md mx-auto">
@@ -56,17 +56,33 @@ export default function DonateCards({ onSelect }: { onSelect: (d: Donation) => v
   );
 }
 
-function Header() {
+function Header({ activeTab }: { activeTab: string }) {
+  const getTitle = () => {
+    switch (activeTab) {
+      case "services": return <>Maxsus <span className="fire-text">xizmatlar</span></>;
+      case "currencies": return <>O'yin <span className="fire-text">valyutalari</span></>;
+      default: return <>O'zingga mos <span className="fire-text">olovni</span> tanla</>;
+    }
+  };
+
+  const getSub = () => {
+    switch (activeTab) {
+      case "services": return "Unban va Unmute xizmatlari orqali cheklovlarni olib tashlang.";
+      case "currencies": return "Point va Shards sotib olib, o'yinda ustunlikka erishing.";
+      default: return "3 ta paket — har birida o'ziga xos imkoniyatlar. Tezkor va xavfsiz xarid.";
+    }
+  };
+
   return (
-    <div className="text-center max-w-3xl mx-auto reveal">
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-xs font-semibold text-orange-600 dark:text-orange-300">
-        🔥 DONAT PAKETLAR
+    <div className="text-center max-w-3xl mx-auto fade-up">
+      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-xs font-semibold text-orange-600 dark:text-orange-300 uppercase">
+        🔥 {activeTab === "ranks" ? "Donat paketlar" : activeTab === "services" ? "Xizmatlar" : "Valyuta"}
       </div>
       <h2 className="mt-4 text-3xl sm:text-5xl font-black tracking-tighter leading-tight">
-        O'zingga mos <span className="fire-text">olovni</span> tanla
+        {getTitle()}
       </h2>
       <p className="mt-3 text-sm sm:text-base text-neutral-600 dark:text-neutral-400">
-        3 ta paket — har birida o'ziga xos imkoniyatlar. Tezkor va xavfsiz xarid.
+        {getSub()}
       </p>
     </div>
   );
@@ -79,8 +95,8 @@ function Card({ d, delay, onSelect }: { d: Donation; delay: number; onSelect: (d
     <div
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      className="relative reveal"
-      style={{ transitionDelay: `${delay}s` }}
+      className="relative fade-up"
+      style={{ animationDelay: `${delay}s` }}
     >
       {d.badge && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 px-3 py-1 rounded-full text-[10px] font-black tracking-widest text-white fire-gradient shadow-lg shadow-orange-500/50">

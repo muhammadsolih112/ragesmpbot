@@ -173,7 +173,11 @@ export default function App() {
         />
       )}
 
-      <PurchaseModal d={selected} onClose={() => setSelected(null)} />
+      <PurchaseModal
+        d={selected}
+        onClose={() => setSelected(null)}
+        onAddTx={addTransaction}
+      />
 
       <AuthModal
         isOpen={authOpen}
