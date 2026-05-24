@@ -50,14 +50,15 @@ export default function PurchaseModal({
   const handleFinish = async () => {
     if (!image || !d) return;
     
+    // UI ni darhol o'zgartiramiz
     setStep("success");
     window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
 
+    // LocalStorage dagi ma'lumotlarni yangilaymiz (Admin panel uchun)
     const finalPkgName = isCurrency ? `${quantity.toLocaleString()} ${d.name.split(' ')[1]}` : d.name;
-
-    // Add to local store for admin panel with base64 image
     onAddTx(nick, finalPkgName, totalPrice, "Payme", preview || undefined);
 
+    // Telegramga rasm va ma'lumotlarni yuboramiz
     try {
       const formData = new FormData();
       formData.append("chat_id", "-1003848105340"); 

@@ -43,18 +43,18 @@ export default function App() {
   // Telegram auto-login
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
-    if (tg?.initDataUnsafe?.user && !currentUser) {
+    // Faqat agar foydalanuvchi o'zi chiqib ketmagan bo'lsa (logout qilinmagan bo'lsa) auto-login qilamiz
+    const wasLoggedOut = localStorage.getItem("ragesmp_logged_out") === "true";
+    
+    if (tg?.initDataUnsafe?.user && !currentUser && !wasLoggedOut) {
       const tgUser = tg.initDataUnsafe.user;
       const nick = tgUser.username || `user_${tgUser.id}`;
-      const pass = `tg_${tgUser.id}`; // Simple internal password for TG users
+      const pass = `tg_${tgUser.id}`; 
       
-      // Try to login, if fails register
       const res = login(nick, pass);
       if (!res.success) {
         register(nick, pass);
       }
-      tg.expand();
-      tg.ready();
     }
   }, [currentUser, login, register]);
 
@@ -117,10 +117,27 @@ export default function App() {
     return () => observer.disconnect();
   }, [view]);
 
-  // Whenever currentUser changes or logs out, ensure view is appropriate
   const handleLogout = () => {
     logout();
+    localStorage.setItem("ragesmp_logged_out", "true");
     setView("main");
+    window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
+  };
+
+  const handleLogin = (nick: string, pass: string) => {
+    const res = login(nick, pass);
+    if (res.success) {
+      localStorage.removeItem("ragesmp_logged_out");
+    }
+    return res;
+  };
+
+  const handleRegister = (nick: string, pass: string) => {
+    const res = register(nick, pass);
+    if (res.success) {
+      localStorage.removeItem("ragesmp_logged_out");
+    }
+    return res;
   };
 
   return (
@@ -184,8 +201,8 @@ export default function App() {
       <AuthModal
         isOpen={authOpen}
         onClose={() => setAuthOpen(false)}
-        onLogin={login}
-        onRegister={register}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
       />
     </div>
   );
