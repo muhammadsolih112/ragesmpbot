@@ -77,43 +77,45 @@ export default function PurchaseModal({
     setStep("success");
     window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
 
-    // LocalStorage dagi ma'lumotlarni yangilaymiz (Admin panel uchun)
-    const nameParts = d.name.split(' ');
-    const pkgLabel = nameParts.length > 1 ? nameParts[1] : d.name;
-    const finalPkgName = isCurrency ? `${quantity.toLocaleString()} ${pkgLabel}` : d.name;
-    
-    onAddTx(nick, finalPkgName, totalPrice, "Payme", preview || undefined);
+    // Heavy workni setTimeout ichiga olamiz, UI qotib qolmasligi uchun
+    setTimeout(async () => {
+      try {
+        // LocalStorage dagi ma'lumotlarni yangilaymiz (Admin panel uchun)
+        const nameParts = d.name.split(' ');
+        const pkgLabel = nameParts.length > 1 ? nameParts[1] : d.name;
+        const finalPkgName = isCurrency ? `${quantity.toLocaleString()} ${pkgLabel}` : d.name;
+        
+        onAddTx(nick, finalPkgName, totalPrice, "Payme", preview || undefined);
 
-    // Telegramga rasm va ma'lumotlarni yuboramiz
-    try {
-      const formData = new FormData();
-      formData.append("chat_id", "-1003848105340"); 
-      formData.append("photo", image);
-      
-      const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const orderId = `TX-${Math.floor(1000 + Math.random() * 9000)}`;
-      const caption = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🆔 Buyurtma: <code>#${orderId}</code>\n🎮 Nick: <b>${nick}</b>\n🛒 Xarid: <b>${finalPkgName}</b>\n💰 Summa: <b>${fmtUZS(totalPrice)}</b>\n🆔 User: ${user?.first_name || "Noma'lum"} (@${user?.username || "yo'q"})\n🆔 Telegram ID: <code>${user?.id || "noma'lum"}</code>\n\nQuyidan tasdiqlang yoki bekor qiling:`;
-      formData.append("caption", caption);
-      formData.append("parse_mode", "HTML");
-      
-      // Inline keyboard qo'shish
-      const replyMarkup = {
-        inline_keyboard: [
-          [
-            { text: "✅ Tasdiqlash", callback_data: `receipt_accept_${orderId}` },
-            { text: "❌ Bekor qilish", callback_data: `receipt_reject_${orderId}` }
+        // Telegramga rasm va ma'lumotlarni yuboramiz
+        const formData = new FormData();
+        formData.append("chat_id", "-1003848105340"); 
+        formData.append("photo", image);
+        
+        const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+        const orderId = `TX-${Math.floor(1000 + Math.random() * 9000)}`;
+        const caption = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🆔 Buyurtma: <code>#${orderId}</code>\n🎮 Nick: <b>${nick}</b>\n🛒 Xarid: <b>${finalPkgName}</b>\n💰 Summa: <b>${fmtUZS(totalPrice)}</b>\n🆔 User: ${user?.first_name || "Noma'lum"} (@${user?.username || "yo'q"})\n🆔 Telegram ID: <code>${user?.id || "noma'lum"}</code>\n\nQuyidan tasdiqlang yoki bekor qiling:`;
+        formData.append("caption", caption);
+        formData.append("parse_mode", "HTML");
+        
+        const replyMarkup = {
+          inline_keyboard: [
+            [
+              { text: "✅ Tasdiqlash", callback_data: `receipt_accept_${orderId}` },
+              { text: "❌ Bekor qilish", callback_data: `receipt_reject_${orderId}` }
+            ]
           ]
-        ]
-      };
-      formData.append("reply_markup", JSON.stringify(replyMarkup));
+        };
+        formData.append("reply_markup", JSON.stringify(replyMarkup));
 
-      await fetch(`https://api.telegram.org/bot8344846056:AAEPxos-P4229tCUJ_MO_PgfH4mSEN6i7OU/sendPhoto`, {
-        method: "POST",
-        body: formData,
-      });
-    } catch (err) {
-      console.error("Telegramga yuborishda xato:", err);
-    }
+        await fetch(`https://api.telegram.org/bot8344846056:AAEPxos-P4229tCUJ_MO_PgfH4mSEN6i7OU/sendPhoto`, {
+          method: "POST",
+          body: formData,
+        });
+      } catch (err) {
+        console.error("Xaridni yakunlashda xato:", err);
+      }
+    }, 100);
   };
 
   if (!d) return null;
