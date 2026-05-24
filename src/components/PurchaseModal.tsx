@@ -28,9 +28,36 @@ export default function PurchaseModal({ d, onClose }: { d: Donation | null; onCl
     }
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    if (!image || !d) return;
+    
+    setStep("success"); // Show success immediately for better UX
     window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
-    setStep("success");
+
+    try {
+      const formData = new FormData();
+      formData.append("chat_id", "-1003848105340"); // RECEIPT_CHAT_ID (Checklar boradigan chat)
+      formData.append("photo", image);
+      
+      const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+      const caption = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🎮 Nick: <b>${nick}</b>\n🛒 Xarid: <b>${d.name}</b>\n💰 Summa: <b>${fmtUZS(d.price)}</b>\n🆔 User: ${user?.first_name || "Noma'lum"} (@${user?.username || "yo'q"})\n🆔 Telegram ID: <code>${user?.id || "noma'lum"}</code>\n\n<i>Tekshirib rankini berish kerak!</i>`;
+      formData.append("caption", caption);
+      formData.append("parse_mode", "HTML");
+
+      // Bot tokeningiz orqali rasm va ma'lumotlarni yuborish
+      const response = await fetch(`https://api.telegram.org/bot8344846056:AAEPxos-P4229tCUJ_MO_PgfH4mSEN6i7OU/sendPhoto`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Telegram API xatosi");
+      }
+    } catch (err) {
+      console.error("Telegramga yuborishda xato:", err);
+      // Xatolik bo'lsa ham foydalanuvchiga muvaffaqiyatli deb ko'rsataveramiz (UX uchun), 
+      // lekin logda xatoni ko'ramiz.
+    }
   };
 
   if (!d) return null;

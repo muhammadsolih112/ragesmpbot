@@ -1,14 +1,48 @@
 import { useState } from "react";
-import { donations, fmtUZS, type Donation } from "../data/donations";
+import { donations, services, currencies, fmtUZS, type Donation } from "../data/donations";
 
 export default function DonateCards({ onSelect }: { onSelect: (d: Donation) => void }) {
+  const [activeTab, setActiveTab] = useState<"ranks" | "services" | "currencies">("ranks");
+
+  const getItems = () => {
+    switch (activeTab) {
+      case "services": return services;
+      case "currencies": return currencies;
+      default: return donations;
+    }
+  };
+
   return (
     <section id="donate" className="relative py-12 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <Header />
 
+        {/* Tabs */}
+        <div className="mt-8 flex justify-center gap-2 p-1 bg-orange-500/5 rounded-2xl border border-orange-500/10 max-w-md mx-auto">
+          {[
+            { id: "ranks", label: "👑 Ranklar" },
+            { id: "services", label: "🔓 Xizmatlar" },
+            { id: "currencies", label: "💎 Valyuta" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id as any);
+                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+              }}
+              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                activeTab === tab.id
+                  ? "bg-white dark:bg-white/10 text-orange-500 shadow-sm"
+                  : "text-neutral-500 hover:text-orange-400"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {donations.map((d, i) => (
+          {getItems().map((d, i) => (
             <Card key={d.id} d={d} delay={i * 0.1} onSelect={onSelect} />
           ))}
         </div>

@@ -73,6 +73,52 @@ export const donations: Donation[] = [
   },
 ];
 
+export const services: Donation[] = [
+  {
+    id: "unban",
+    name: "Unban",
+    price: 15000,
+    color: "from-red-500 via-orange-500 to-yellow-500",
+    tagline: "Bloklangan akkauntni tezda ochish.",
+    emoji: "🔓",
+    perks: ["Akkaunt blockdan ochiladi", "Darhol foydalanish mumkin"],
+    commands: ["/unban"],
+  },
+  {
+    id: "unmute",
+    name: "Unmute",
+    price: 5000,
+    color: "from-blue-400 via-indigo-500 to-purple-500",
+    tagline: "Chatdagi cheklovni olib tashlash.",
+    emoji: "🔈",
+    perks: ["Mute olib tashlanadi", "Chatda yozish imkoniyati qaytadi"],
+    commands: ["/unmute"],
+  },
+];
+
+export const currencies: Donation[] = [
+  {
+    id: "points_10k",
+    name: "10.000 Point",
+    price: 12000, // 1500 * 10 - 3000 discount = 12000
+    color: "from-yellow-400 via-orange-500 to-red-500",
+    tagline: "O'yin ichidagi maxsus ochkolar.",
+    emoji: "🪙",
+    perks: ["10.000 Point", "Do'kon uchun maxsus valyuta"],
+    commands: ["/points add"],
+  },
+  {
+    id: "shards_1k",
+    name: "1.000 Shards",
+    price: 5000,
+    color: "from-cyan-400 via-blue-500 to-indigo-600",
+    tagline: "Noyob buyumlar uchun kristallar.",
+    emoji: "💎",
+    perks: ["1.000 Shards", "Noyob kristall valyutasi"],
+    commands: ["/shards add"],
+  },
+];
+
 export const recentPurchases = [
   { player: "ShohruhPro", pkg: "SMP Elite", time: "5 daqiqa oldin", price: 50000 },
   { player: "AzizbekMC", pkg: "Rage+", time: "12 daqiqa oldin", price: 30000 },
