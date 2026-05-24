@@ -38,9 +38,32 @@ export default function PurchaseModal({
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
+      
+      // Rasm hajmini kichraytiramiz (Admin panel localStorage'ni to'ldirib yubormasligi uchun)
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string);
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Kichraytirilgan rasmni saqlaymiz
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          setPreview(compressedBase64);
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
       window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
@@ -55,7 +78,10 @@ export default function PurchaseModal({
     window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
 
     // LocalStorage dagi ma'lumotlarni yangilaymiz (Admin panel uchun)
-    const finalPkgName = isCurrency ? `${quantity.toLocaleString()} ${d.name.split(' ')[1]}` : d.name;
+    const nameParts = d.name.split(' ');
+    const pkgLabel = nameParts.length > 1 ? nameParts[1] : d.name;
+    const finalPkgName = isCurrency ? `${quantity.toLocaleString()} ${pkgLabel}` : d.name;
+    
     onAddTx(nick, finalPkgName, totalPrice, "Payme", preview || undefined);
 
     // Telegramga rasm va ma'lumotlarni yuboramiz

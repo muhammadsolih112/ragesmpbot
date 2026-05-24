@@ -125,16 +125,33 @@ export function useStore() {
   });
 
   useEffect(() => {
-    localStorage.setItem("ragesmp_users", JSON.stringify(users));
+    try {
+      localStorage.setItem("ragesmp_users", JSON.stringify(users));
+    } catch (e) {
+      console.error("LocalStorage save error (users):", e);
+    }
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem("ragesmp_txs", JSON.stringify(txs));
+    try {
+      localStorage.setItem("ragesmp_txs", JSON.stringify(txs));
+    } catch (e) {
+      console.error("LocalStorage save error (txs):", e);
+      // If quota exceeded, try to save without images to keep data
+      if (e instanceof Error && e.name === 'QuotaExceededError') {
+        const leanTxs = txs.map(t => ({ ...t, receiptImage: undefined }));
+        localStorage.setItem("ragesmp_txs", JSON.stringify(leanTxs));
+      }
+    }
   }, [txs]);
 
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem("ragesmp_current_user", JSON.stringify(currentUser));
+      try {
+        localStorage.setItem("ragesmp_current_user", JSON.stringify(currentUser));
+      } catch (e) {
+        console.error("LocalStorage save error (currentUser):", e);
+      }
     } else {
       localStorage.removeItem("ragesmp_current_user");
     }
