@@ -1,16 +1,5 @@
 import { useState, useEffect } from "react";
 
-export type User = {
-  nick: string;
-  pass: string;
-  role: "admin" | "user";
-  regDate: string;
-  rank: string; // e.g. "SMP Elite", "RagePro", "Oddiy"
-  spent: number;
-  deletedAt?: string;
-  deletedAtLabel?: string;
-};
-
 export type Transaction = {
   id: string;
   player: string;
@@ -20,9 +9,29 @@ export type Transaction = {
   date: string;
   method: "Click" | "Payme" | "Uzcard" | "Humo";
   status: "To'langan" | "Kutilmoqda" | "Bekor qilingan";
+  receiptImage?: string; // Base64 encoded image
   deletedAt?: string;
   deletedAtLabel?: string;
   previousStatus?: Transaction["status"];
+};
+
+export type Notification = {
+  id: string;
+  text: string;
+  time: string;
+  read: boolean;
+};
+
+export type User = {
+  nick: string;
+  pass: string;
+  role: "admin" | "user";
+  regDate: string;
+  rank: string;
+  spent: number;
+  notifications: Notification[];
+  deletedAt?: string;
+  deletedAtLabel?: string;
 };
 
 const nowLabel = () => new Date().toLocaleString("uz-UZ", { timeZone: "Asia/Tashkent" });
@@ -58,14 +67,14 @@ const pruneTrash = <T extends { deletedAt?: string }>(items: T[]) => {
 };
 
 const INITIAL_USERS: User[] = [
-  { nick: "vebuca", pass: "vebuca101uz", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000 },
-  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000 },
-  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000 },
-  { nick: "ToshkentBoy", pass: "pass123", role: "user", regDate: "2026-01-18", rank: "Rage+", spent: 150000 },
-  { nick: "AzizbekMC", pass: "pass123", role: "user", regDate: "2026-01-20", rank: "Rage+", spent: 120000 },
-  { nick: "NightCraft", pass: "pass123", role: "user", regDate: "2026-01-22", rank: "Rage+", spent: 90000 },
-  { nick: "OlimjonUZ", pass: "pass123", role: "user", regDate: "2026-01-25", rank: "RagePro", spent: 10000 },
-  { nick: "DonerKing", pass: "pass123", role: "user", regDate: "2026-01-28", rank: "RagePro", spent: 10000 },
+  { nick: "vebuca", pass: "vebuca101uz", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000, notifications: [] },
+  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000, notifications: [] },
+  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000, notifications: [] },
+  { nick: "ToshkentBoy", pass: "pass123", role: "user", regDate: "2026-01-18", rank: "Rage+", spent: 150000, notifications: [] },
+  { nick: "AzizbekMC", pass: "pass123", role: "user", regDate: "2026-01-20", rank: "Rage+", spent: 120000, notifications: [] },
+  { nick: "NightCraft", pass: "pass123", role: "user", regDate: "2026-01-22", rank: "Rage+", spent: 90000, notifications: [] },
+  { nick: "OlimjonUZ", pass: "pass123", role: "user", regDate: "2026-01-25", rank: "RagePro", spent: 10000, notifications: [] },
+  { nick: "DonerKing", pass: "pass123", role: "user", regDate: "2026-01-28", rank: "RagePro", spent: 10000, notifications: [] },
 ];
 
 const INITIAL_TXS: Transaction[] = [
@@ -85,7 +94,11 @@ export function useStore() {
   const [users, setUsers] = useState<User[]>(() => {
     const s = localStorage.getItem("ragesmp_users");
     if (s) {
-      try { return migrateUsers(pruneTrash(JSON.parse(s))); } catch {}
+      try { 
+        const parsed = JSON.parse(s);
+        const items = parsed.map((u: any) => ({ ...u, notifications: u.notifications || [] }));
+        return migrateUsers(pruneTrash(items)); 
+      } catch {}
     }
     localStorage.setItem("ragesmp_users", JSON.stringify(INITIAL_USERS));
     return INITIAL_USERS;
@@ -103,7 +116,10 @@ export function useStore() {
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
     const s = localStorage.getItem("ragesmp_current_user");
     if (s) {
-      try { return JSON.parse(s); } catch {}
+      try { 
+        const u = JSON.parse(s);
+        return { ...u, notifications: u.notifications || [] };
+      } catch {}
     }
     return null;
   });
@@ -152,6 +168,7 @@ export function useStore() {
       regDate: new Date().toISOString().split("T")[0],
       rank: "Oddiy",
       spent: 0,
+      notifications: [],
     };
 
     const updated = [...users, newUser];
@@ -164,7 +181,7 @@ export function useStore() {
     setCurrentUser(null);
   };
 
-  const addTransaction = (player: string, pkgName: string, price: number, method: Transaction["method"]) => {
+  const addTransaction = (player: string, pkgName: string, price: number, method: Transaction["method"], receiptImage?: string) => {
     const newTx: Transaction = {
       id: `TX-${Math.floor(1000 + Math.random() * 9000)}`,
       player,
@@ -174,47 +191,58 @@ export function useStore() {
       date: new Date().toISOString().replace("T", " ").substring(0, 16),
       method,
       status: "Kutilmoqda",
+      receiptImage,
     };
     setTxs([newTx, ...txs]);
-
-    // Update user rank & spent if exists
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.nick.toLowerCase() === player.toLowerCase()) {
-          return {
-            ...u,
-            rank: pkgName,
-            spent: u.spent + price,
-          };
-        }
-        return u;
-      })
-    );
-
-    if (currentUser && currentUser.nick.toLowerCase() === player.toLowerCase()) {
-      setCurrentUser((prev) => prev ? ({ ...prev, rank: pkgName, spent: prev.spent + price }) : null);
-    }
   };
 
   const updateTxStatus = (id: string, status: Transaction["status"]) => {
     setTxs((prev) =>
       prev.map((t) => {
         if (t.id === id) {
-          // If status changes to paid, ensure user gets rank
           if (status === "To'langan" && t.status !== "To'langan") {
+            const newNotif: Notification = {
+              id: Math.random().toString(36).substr(2, 9),
+              text: `✅ Chekingiz tasdiqlandi! ${t.pkg} ranki berildi.`,
+              time: nowLabel(),
+              read: false,
+            };
+
             setUsers((usrs) =>
-              usrs.map((u) =>
-                u.nick.toLowerCase() === t.player.toLowerCase()
-                  ? { ...u, rank: t.pkg, spent: u.spent + t.price }
-                  : u
-              )
+              usrs.map((u) => {
+                if (u.nick.toLowerCase() === t.player.toLowerCase()) {
+                  return { 
+                    ...u, 
+                    rank: t.pkg, 
+                    spent: u.spent + t.price, 
+                    notifications: [newNotif, ...u.notifications]
+                  };
+                }
+                return u;
+              })
             );
+
+            if (currentUser && currentUser.nick.toLowerCase() === t.player.toLowerCase()) {
+              setCurrentUser((prev) => prev ? ({
+                ...prev,
+                rank: t.pkg,
+                spent: prev.spent + t.price,
+                notifications: [newNotif, ...prev.notifications]
+              }) : null);
+            }
           }
           return { ...t, status };
         }
         return t;
       })
     );
+  };
+
+  const markNotificationsAsRead = () => {
+    if (!currentUser) return;
+    const updated = { ...currentUser, notifications: currentUser.notifications.map(n => ({ ...n, read: true })) };
+    setCurrentUser(updated);
+    setUsers(prev => prev.map(u => u.nick === currentUser.nick ? updated : u));
   };
 
   const deleteTx = (id: string) => {
@@ -299,5 +327,6 @@ export function useStore() {
     deleteUser,
     restoreUser,
     permanentDeleteUser,
+    markNotificationsAsRead,
   };
 }

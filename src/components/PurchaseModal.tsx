@@ -9,12 +9,17 @@ export default function PurchaseModal({
 }: {
   d: Donation | null;
   onClose: () => void;
-  onAddTx: (player: string, pkgName: string, price: number, method: Transaction["method"]) => void;
+  onAddTx: (player: string, pkgName: string, price: number, method: Transaction["method"], receiptImage?: string) => void;
 }) {
   const [nick, setNick] = useState("");
   const [step, setStep] = useState<"form" | "upload" | "success">("form");
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [quantity, setQuantity] = useState(1);
+
+  const isCurrency = d?.id.includes("points") || d?.id.includes("shards");
+  const unitPrice = d?.price || 0;
+  const totalPrice = isCurrency ? unitPrice * quantity : unitPrice;
 
   useEffect(() => {
     if (d) {
@@ -23,6 +28,7 @@ export default function PurchaseModal({
       setStep("form");
       setImage(null);
       setPreview(null);
+      setQuantity(1);
     } else {
       document.body.style.overflow = "";
     }
@@ -32,7 +38,11 @@ export default function PurchaseModal({
     const file = e.target.files?.[0];
     if (file) {
       setImage(file);
-      setPreview(URL.createObjectURL(file));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
       window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
     }
   };
@@ -40,35 +50,30 @@ export default function PurchaseModal({
   const handleFinish = async () => {
     if (!image || !d) return;
     
-    setStep("success"); // Show success immediately for better UX
+    setStep("success");
     window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
 
-    // Add to local store for admin panel
-    onAddTx(nick, d.name, d.price, "Payme"); // Default to Payme for now as per image logic
+    const finalPkgName = isCurrency ? `${quantity.toLocaleString()} ${d.name.split(' ')[1]}` : d.name;
+
+    // Add to local store for admin panel with base64 image
+    onAddTx(nick, finalPkgName, totalPrice, "Payme", preview || undefined);
 
     try {
       const formData = new FormData();
-      formData.append("chat_id", "-1003848105340"); // RECEIPT_CHAT_ID (Checklar boradigan chat)
+      formData.append("chat_id", "-1003848105340"); 
       formData.append("photo", image);
       
       const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const caption = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🎮 Nick: <b>${nick}</b>\n🛒 Xarid: <b>${d.name}</b>\n💰 Summa: <b>${fmtUZS(d.price)}</b>\n🆔 User: ${user?.first_name || "Noma'lum"} (@${user?.username || "yo'q"})\n🆔 Telegram ID: <code>${user?.id || "noma'lum"}</code>\n\n<i>Tekshirib rankini berish kerak!</i>`;
+      const caption = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🎮 Nick: <b>${nick}</b>\n🛒 Xarid: <b>${finalPkgName}</b>\n💰 Summa: <b>${fmtUZS(totalPrice)}</b>\n🆔 User: ${user?.first_name || "Noma'lum"} (@${user?.username || "yo'q"})\n🆔 Telegram ID: <code>${user?.id || "noma'lum"}</code>\n\n<i>Tekshirib rankini berish kerak!</i>`;
       formData.append("caption", caption);
       formData.append("parse_mode", "HTML");
 
-      // Bot tokeningiz orqali rasm va ma'lumotlarni yuborish
-      const response = await fetch(`https://api.telegram.org/bot8344846056:AAEPxos-P4229tCUJ_MO_PgfH4mSEN6i7OU/sendPhoto`, {
+      await fetch(`https://api.telegram.org/bot8344846056:AAEPxos-P4229tCUJ_MO_PgfH4mSEN6i7OU/sendPhoto`, {
         method: "POST",
         body: formData,
       });
-
-      if (!response.ok) {
-        throw new Error("Telegram API xatosi");
-      }
     } catch (err) {
       console.error("Telegramga yuborishda xato:", err);
-      // Xatolik bo'lsa ham foydalanuvchiga muvaffaqiyatli deb ko'rsataveramiz (UX uchun), 
-      // lekin logda xatoni ko'ramiz.
     }
   };
 
@@ -100,17 +105,41 @@ export default function PurchaseModal({
             <div className="fade-up">
               <div className="text-center">
                 <h3 className="text-2xl font-black tracking-tight">{d.name}</h3>
-                <div className="text-3xl font-black fire-text mt-1">{fmtUZS(d.price)}</div>
+                <div className="text-3xl font-black fire-text mt-1">{fmtUZS(totalPrice)}</div>
               </div>
 
-              <div className="mt-6">
-                <label className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-bold ml-1">Minecraft Nickname</label>
-                <input
-                  value={nick}
-                  onChange={(e) => setNick(e.target.value)}
-                  placeholder="Steve123..."
-                  className="mt-2 w-full px-5 py-4 rounded-2xl border border-orange-500/20 bg-neutral-50 dark:bg-white/[0.03] focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none font-mono transition-all"
-                />
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-bold ml-1">Minecraft Nickname</label>
+                  <input
+                    value={nick}
+                    onChange={(e) => setNick(e.target.value)}
+                    placeholder="Steve123..."
+                    className="mt-2 w-full px-5 py-4 rounded-2xl border border-orange-500/20 bg-neutral-50 dark:bg-white/[0.03] focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 outline-none font-mono transition-all"
+                  />
+                </div>
+
+                {isCurrency && (
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-bold ml-1">Miqdori (x{d.name.split(' ')[0]})</label>
+                    <div className="mt-2 flex items-center gap-4">
+                      <button 
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="h-12 w-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl font-bold hover:bg-orange-500/20"
+                      >-</button>
+                      <input
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="flex-1 h-12 text-center bg-transparent border-b-2 border-orange-500/30 font-bold text-lg outline-none"
+                      />
+                      <button 
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="h-12 w-12 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-xl font-bold hover:bg-orange-500/20"
+                      >+</button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button

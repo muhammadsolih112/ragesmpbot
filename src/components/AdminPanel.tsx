@@ -315,6 +315,17 @@ export default function AdminPanel({
                           <td className="py-4 px-6">
                             <div className="font-bold text-orange-500">{fmtUZS(t.price)}</div>
                             <div className="text-[11px] text-neutral-500 mt-0.5">{t.method}</div>
+                            {t.receiptImage && (
+                              <button 
+                                onClick={() => {
+                                  const win = window.open("");
+                                  win?.document.write(`<img src="${t.receiptImage}" style="max-width:100%">`);
+                                }}
+                                className="mt-2 text-[10px] text-blue-500 font-bold hover:underline block"
+                              >
+                                🖼️ Chekni ko'rish
+                              </button>
+                            )}
                           </td>
                           <td className="py-4 px-6">
                             <span

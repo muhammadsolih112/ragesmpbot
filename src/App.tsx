@@ -37,6 +37,7 @@ export default function App() {
     deleteUser,
     restoreUser,
     permanentDeleteUser,
+    markNotificationsAsRead,
   } = useStore();
 
   // Telegram auto-login
@@ -130,6 +131,7 @@ export default function App() {
             currentUser={currentUser}
             onOpenAuth={() => setAuthOpen(true)}
             onNavView={setView}
+            onMarkNotificationsAsRead={markNotificationsAsRead}
           />
           <main>
             <Hero />

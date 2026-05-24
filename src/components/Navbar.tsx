@@ -15,13 +15,19 @@ export default function Navbar({
   currentUser,
   onOpenAuth,
   onNavView,
+  onMarkNotificationsAsRead,
 }: {
   currentUser: User | null;
   onOpenAuth: () => void;
   onNavView: (view: "main" | "admin" | "profile") => void;
+  onMarkNotificationsAsRead: () => void;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showNotifs, setShowNotifs] = useState(false);
+
+  const unreadCount = currentUser?.notifications.filter(n => !n.read).length || 0;
+
   const visibleLinks = links.filter((link) => link.href !== "#recent" || currentUser?.role === "admin");
 
   useEffect(() => {
@@ -73,7 +79,46 @@ export default function Navbar({
 
         <div className="flex items-center gap-2 sm:gap-3">
           {currentUser ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative">
+              {/* Notification Bell */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setShowNotifs(!showNotifs);
+                    if (!showNotifs) onMarkNotificationsAsRead();
+                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+                  }}
+                  className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-orange-500 relative hover:bg-orange-500/20 transition-all"
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center animate-bounce">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifs && (
+                  <div className="absolute top-12 right-0 w-64 sm:w-72 max-h-96 overflow-y-auto rounded-2xl border border-orange-500/20 bg-white dark:bg-[#0d0d12] shadow-2xl p-2 z-[60] fade-up">
+                    <div className="px-3 py-2 border-b border-orange-500/10 text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                      Bildirishnomalar
+                    </div>
+                    <div className="mt-1 space-y-1">
+                      {currentUser.notifications.length === 0 ? (
+                        <div className="py-8 text-center text-xs text-neutral-500">Hozircha xabarlar yo'q</div>
+                      ) : (
+                        currentUser.notifications.map(n => (
+                          <div key={n.id} className={`p-3 rounded-xl text-xs leading-relaxed ${n.read ? 'opacity-60' : 'bg-orange-500/5 border border-orange-500/10'}`}>
+                            <div className="font-semibold text-neutral-800 dark:text-neutral-200">{n.text}</div>
+                            <div className="mt-1 text-[10px] text-neutral-400">{n.time}</div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {currentUser.role === "admin" && (
                 <button
                   onClick={() => {
