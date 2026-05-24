@@ -65,9 +65,21 @@ export default function PurchaseModal({
       formData.append("photo", image);
       
       const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-      const caption = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🎮 Nick: <b>${nick}</b>\n🛒 Xarid: <b>${finalPkgName}</b>\n💰 Summa: <b>${fmtUZS(totalPrice)}</b>\n🆔 User: ${user?.first_name || "Noma'lum"} (@${user?.username || "yo'q"})\n🆔 Telegram ID: <code>${user?.id || "noma'lum"}</code>\n\n<i>Tekshirib rankini berish kerak!</i>`;
+      const orderId = `TX-${Math.floor(1000 + Math.random() * 9000)}`;
+      const caption = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🆔 Buyurtma: <code>#${orderId}</code>\n🎮 Nick: <b>${nick}</b>\n🛒 Xarid: <b>${finalPkgName}</b>\n💰 Summa: <b>${fmtUZS(totalPrice)}</b>\n🆔 User: ${user?.first_name || "Noma'lum"} (@${user?.username || "yo'q"})\n🆔 Telegram ID: <code>${user?.id || "noma'lum"}</code>\n\nQuyidan tasdiqlang yoki bekor qiling:`;
       formData.append("caption", caption);
       formData.append("parse_mode", "HTML");
+      
+      // Inline keyboard qo'shish
+      const replyMarkup = {
+        inline_keyboard: [
+          [
+            { text: "✅ Tasdiqlash", callback_data: `receipt_accept_${orderId}` },
+            { text: "❌ Bekor qilish", callback_data: `receipt_reject_${orderId}` }
+          ]
+        ]
+      };
+      formData.append("reply_markup", JSON.stringify(replyMarkup));
 
       await fetch(`https://api.telegram.org/bot8344846056:AAEPxos-P4229tCUJ_MO_PgfH4mSEN6i7OU/sendPhoto`, {
         method: "POST",
