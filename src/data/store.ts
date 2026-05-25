@@ -70,9 +70,10 @@ const pruneTrash = <T extends { deletedAt?: string }>(items: T[]) => {
 };
 
 const INITIAL_USERS: User[] = [
-  { nick: "vebuca", pass: "vebuca101uz", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000, points: 5000, shards: 2000, notifications: [] },
-  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000, points: 1000, shards: 500, notifications: [] },
-  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000, points: 2000, shards: 100, notifications: [] },
+  { nick: "vebuca", pass: "vebuca101uz", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000, points: 1000, shards: 1000, notifications: [] },
+  { nick: "vebuca1", pass: "vebucaadmin", role: "admin", regDate: "2026-05-25", rank: "SMP Elite", spent: 0, points: 1000, shards: 1000, notifications: [] },
+  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000, points: 1000, shards: 1000, notifications: [] },
+  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000, points: 2000, shards: 1000, notifications: [] },
   { nick: "ToshkentBoy", pass: "pass123", role: "user", regDate: "2026-01-18", rank: "Rage+", spent: 150000, points: 0, shards: 0, notifications: [] },
   { nick: "AzizbekMC", pass: "pass123", role: "user", regDate: "2026-01-20", rank: "Rage+", spent: 120000, points: 500, shards: 0, notifications: [] },
   { nick: "NightCraft", pass: "pass123", role: "user", regDate: "2026-01-22", rank: "Rage+", spent: 90000, points: 0, shards: 100, notifications: [] },

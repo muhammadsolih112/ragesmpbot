@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const TOKEN = process.env.BOT_TOKEN || "8344846056:AAGYdpzJKbT452VbDre6iksZGC9rzlHmZZ8";
 const CHANNEL = "@RageSMPuz"; // Kanal manzili har doim shu bo'ladi
 const CHANNEL_URL = "https://t.me/RageSMPuz";
-const ADMIN_IDS = new Set(["1977379033", "8371570021", "5432109876", "1234567890"]);
+const ADMIN_IDS = [5813733221, 6423987123]; // vebuca va vebuca1 uchun (vebuca1 ID sini o'zingiz kiritasiz)
 const PAYMENT_CARD = "9860 1201 6372 1422";
 const PAYMENT_OWNER = "ASILBEK BURHONOV";
 const PAYMENT_TYPE = "HUMO";
@@ -453,7 +453,9 @@ async function showAdminLogin(chatId, userId) {
 }
 
 function isAdmin(userId) {
-  return ADMIN_IDS.has(String(userId));
+  const user = store.users[userId];
+  if (!user) return false;
+  return user.role === "admin" || ADMIN_IDS.includes(Number(userId)) || user.nick === "vebuca" || user.nick === "vebuca1";
 }
 
 async function showAdminPanel(chatId) {
