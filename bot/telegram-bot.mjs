@@ -131,25 +131,53 @@ function calculate(amount, basePerThousandUZS, discountPerTenThousandUZS) {
   return { amount: normalized, base, discount, total: Math.max(0, base - discount) };
 }
 
-async function api(method, payload = {}) {
-  const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const data = await response.json();
-  if (!data.ok) throw new Error(`${method}: ${data.description}`);
-  return data.result;
+async function api(method, payload = {}, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
+      const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      const data = await response.json();
+      if (!data.ok) throw new Error(`${method}: ${data.description}`);
+      return data.result;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      console.warn(`API retry ${i + 1}/${retries} for ${method}: ${error.message}`);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
 }
 
-async function apiForm(method, formData) {
-  const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
-    method: "POST",
-    body: formData,
-  });
-  const data = await response.json();
-  if (!data.ok) throw new Error(`${method}: ${data.description}`);
-  return data.result;
+async function apiForm(method, formData, retries = 3) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for photos
+      
+      const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      const data = await response.json();
+      if (!data.ok) throw new Error(`${method}: ${data.description}`);
+      return data.result;
+    } catch (error) {
+      if (i === retries - 1) throw error;
+      console.warn(`API Form retry ${i + 1}/${retries} for ${method}: ${error.message}`);
+      await new Promise(r => setTimeout(r, 2000));
+    }
+  }
 }
 
 function keyboard(rows) {
@@ -599,9 +627,9 @@ async function handleReceiptDecision(chatId, userId, data, message) {
   
   if (!order) {
     const caption = message?.caption || "";
-    const tgIdMatch = caption.match(/Telegram ID:\s*(\d+)/i) || caption.match(/ID:\s*(\d+)/i);
+    const tgIdMatch = caption.match(/Telegram ID:\s*(\d+)/i) || caption.match(/ID:\s*(\d+)/i) || caption.match(/User ID:\s*(\d+)/i);
     const itemMatch = caption.match(/Xarid:\s*(.+)/i);
-    const priceMatch = caption.match(/Summa:\s*(.+)/i);
+    const priceMatch = caption.match(/Summa:\s*(.+)/i) || caption.match(/To'lov summasi:\s*(.+)/i);
 
     if (tgIdMatch) {
       order = {
@@ -629,10 +657,10 @@ async function handleReceiptDecision(chatId, userId, data, message) {
   order.status = approved ? "approved" : "rejected";
   saveStore(store);
 
-  // ADMIN uchun menu buttonni yangilaymiz (Sinxronizatsiya uchun)
-  // Bu barcha adminlar uchun yangilanishi kerak, lekin Telegram API faqat bitta chatId uchun ruxsat beradi
-  // Shuning uchun hozirgi admin uchun yangilaymiz
-  await setMenuButton(chatId, userId);
+  // Sync with Web App for ALL admins
+  for (const adminId of ADMIN_IDS) {
+    await setMenuButton(adminId, adminId).catch(() => {});
+  }
 
   if (approved) {
     const successMsg = `✅🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
@@ -658,10 +686,11 @@ async function setMenuButton(chatId, userId) {
     
     // Adminlar uchun ma'lumotlarni sinxronizatsiya qilamiz
     if (isAdmin(userId)) {
-      const syncData = Buffer.from(JSON.stringify({
-        txs: store.orders.slice(0, 50), // Oxirgi 50 ta buyurtma
+      const syncDataObj = {
+        txs: store.orders.slice(0, 100), // Oxirgi 100 ta buyurtma
         users: Object.entries(store.users).map(([id, u]) => ({ ...u, id }))
-      })).toString("base64");
+      };
+      const syncData = Buffer.from(JSON.stringify(syncDataObj)).toString("base64");
       url += `?admin_sync=${syncData}`;
     }
 

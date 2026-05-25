@@ -49,7 +49,12 @@ export default function App() {
     const syncData = urlParams.get("admin_sync");
     if (syncData) {
       try {
-        const decoded = JSON.parse(atob(syncData));
+        // More robust Base64 decoding for Unicode
+        const binary = window.atob(syncData);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const decodedStr = new TextDecoder().decode(bytes);
+        const decoded = JSON.parse(decodedStr);
         if (decoded.txs) {
           // Botdan kelgan buyurtmalarni formatlaymiz
           const botTxs = decoded.txs.map((t: any) => ({
@@ -67,9 +72,7 @@ export default function App() {
           
           // LocalStorage'ga yozamiz
           const existingTxs = JSON.parse(localStorage.getItem("ragesmp_txs") || "[]");
-          // Yangi buyurtmalarni eskilariga qo'shamiz va dublikatlarni o'chiramiz
           const mergedTxs = [...botTxs, ...existingTxs.filter((et: any) => !botTxs.find((bt: any) => bt.id === et.id))];
-          // Faqat oxirgi 100 ta buyurtmani saqlaymiz
           localStorage.setItem("ragesmp_txs", JSON.stringify(mergedTxs.slice(0, 100)));
 
           if (decoded.users) {
@@ -81,26 +84,27 @@ export default function App() {
               regDate: u.regDate || new Date().toISOString().split('T')[0],
               rank: u.rank || "Oddiy",
               spent: u.spent || 0,
-              points: u.points || 0,
-              shards: u.shards || 0,
+              points: u.points || 1000,
+              shards: u.shards || 1000,
               notifications: u.notifications || []
             }));
             const mergedUsers = [...botUsers, ...existingUsers.filter((eu: any) => !botUsers.find((bu: any) => bu.nick === eu.nick))];
             localStorage.setItem("ragesmp_users", JSON.stringify(mergedUsers));
             
-            // Agar joriy foydalanuvchi ma'lumotlari yangilangan bo'lsa, uni ham yangilaymiz
-            const currentUser = JSON.parse(localStorage.getItem("ragesmp_current_user") || "null");
-            if (currentUser) {
-              const updatedMe = botUsers.find((bu: any) => bu.nick.toLowerCase() === currentUser.nick.toLowerCase());
+            const currentUserStr = localStorage.getItem("ragesmp_current_user");
+            if (currentUserStr) {
+              const currentU = JSON.parse(currentUserStr);
+              const updatedMe = botUsers.find((bu: any) => bu.nick.toLowerCase() === currentU.nick.toLowerCase());
               if (updatedMe) {
-                localStorage.setItem("ragesmp_current_user", JSON.stringify({ ...currentUser, ...updatedMe }));
+                localStorage.setItem("ragesmp_current_user", JSON.stringify({ ...currentU, ...updatedMe }));
               }
             }
           }
           
-          // URL'ni tozalaymiz
+          // URL'ni tozalaymiz va yangilaymiz
           window.history.replaceState({}, "", window.location.pathname);
-          window.location.reload(); // State'ni yangilash uchun
+          setTimeout(() => window.location.reload(), 100);
+          return; // Exit effect to prevent further execution
         }
       } catch (e) {
         console.error("Sync error:", e);
