@@ -82,6 +82,16 @@ body {
   color: var(--tg-text);
 }
 
+@keyframes bounce-out {
+  0% { transform: translate(-50%, 0); opacity: 0; }
+  20% { transform: translate(-50%, -10px); opacity: 1; }
+  80% { transform: translate(-50%, -15px); opacity: 1; }
+  100% { transform: translate(-50%, -25px); opacity: 0; }
+}
+.animate-bounce-out {
+  animation: bounce-out 2s ease-out forwards;
+}
+
 /* ===== Fire / glow text ===== */
 .fire-text {
   background: linear-gradient(180deg, #fff7e6 0%, #ffd166 35%, #ff7a18 70%, #ff2d00 100%);

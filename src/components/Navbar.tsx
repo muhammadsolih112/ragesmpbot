@@ -26,7 +26,12 @@ export default function Navbar({
   const [open, setOpen] = useState(false);
   const [showNotifs, setShowNotifs] = useState(false);
 
-  const unreadCount = currentUser?.notifications.filter(n => !n.read).length || 0;
+  const userNotifs = currentUser?.notifications || [];
+  const pendingOrdersCount = currentUser?.role === "admin" 
+    ? (JSON.parse(localStorage.getItem("ragesmp_txs") || "[]") as any[]).filter(t => t.status === "Kutilmoqda").length 
+    : 0;
+
+  const unreadCount = userNotifs.filter(n => !n.read).length + pendingOrdersCount;
 
   const visibleLinks = links.filter((link) => link.href !== "#recent" || currentUser?.role === "admin");
 
@@ -104,15 +109,35 @@ export default function Navbar({
                       Bildirishnomalar
                     </div>
                     <div className="mt-1 space-y-1">
-                      {currentUser.notifications.length === 0 ? (
+                      {unreadCount === 0 ? (
                         <div className="py-8 text-center text-xs text-neutral-500">Hozircha xabarlar yo'q</div>
                       ) : (
-                        currentUser.notifications.map(n => (
-                          <div key={n.id} className={`p-3 rounded-xl text-xs leading-relaxed ${n.read ? 'opacity-60' : 'bg-orange-500/5 border border-orange-500/10'}`}>
-                            <div className="font-semibold text-neutral-800 dark:text-neutral-200">{n.text}</div>
-                            <div className="mt-1 text-[10px] text-neutral-400">{n.time}</div>
-                          </div>
-                        ))
+                        <>
+                          {currentUser?.role === "admin" && (JSON.parse(localStorage.getItem("ragesmp_txs") || "[]") as any[])
+                            .filter(t => t.status === "Kutilmoqda")
+                            .map(t => (
+                              <div key={t.id} className="p-3 rounded-xl text-xs leading-relaxed bg-red-500/5 border border-red-500/10">
+                                <div className="font-black text-red-500 uppercase text-[9px] mb-1">Yangi buyurtma</div>
+                                <div className="font-semibold text-neutral-800 dark:text-neutral-200">
+                                  {t.player} - {t.pkg} sotib olmoqchi
+                                </div>
+                                <div className="mt-1 text-[10px] text-neutral-400">{t.date}</div>
+                                <button 
+                                  onClick={() => onNavView("admin")}
+                                  className="mt-2 w-full py-1.5 rounded-lg bg-red-500 text-white font-bold text-[10px] uppercase"
+                                >
+                                  Tekshirish
+                                </button>
+                              </div>
+                            ))
+                          }
+                          {userNotifs.map(n => (
+                            <div key={n.id} className={`p-3 rounded-xl text-xs leading-relaxed ${n.read ? 'opacity-60' : 'bg-orange-500/5 border border-orange-500/10'}`}>
+                              <div className="font-semibold text-neutral-800 dark:text-neutral-200">{n.text}</div>
+                              <div className="mt-1 text-[10px] text-neutral-400">{n.time}</div>
+                            </div>
+                          ))}
+                        </>
                       )}
                     </div>
                   </div>

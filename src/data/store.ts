@@ -30,6 +30,8 @@ export type User = {
   regDate: string;
   rank: string;
   spent: number;
+  points: number;
+  shards: number;
   notifications: Notification[];
   deletedAt?: string;
   deletedAtLabel?: string;
@@ -68,14 +70,14 @@ const pruneTrash = <T extends { deletedAt?: string }>(items: T[]) => {
 };
 
 const INITIAL_USERS: User[] = [
-  { nick: "vebuca", pass: "vebuca101uz", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000, notifications: [] },
-  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000, notifications: [] },
-  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000, notifications: [] },
-  { nick: "ToshkentBoy", pass: "pass123", role: "user", regDate: "2026-01-18", rank: "Rage+", spent: 150000, notifications: [] },
-  { nick: "AzizbekMC", pass: "pass123", role: "user", regDate: "2026-01-20", rank: "Rage+", spent: 120000, notifications: [] },
-  { nick: "NightCraft", pass: "pass123", role: "user", regDate: "2026-01-22", rank: "Rage+", spent: 90000, notifications: [] },
-  { nick: "OlimjonUZ", pass: "pass123", role: "user", regDate: "2026-01-25", rank: "RagePro", spent: 10000, notifications: [] },
-  { nick: "DonerKing", pass: "pass123", role: "user", regDate: "2026-01-28", rank: "RagePro", spent: 10000, notifications: [] },
+  { nick: "vebuca", pass: "vebuca101uz", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000, points: 5000, shards: 2000, notifications: [] },
+  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000, points: 1000, shards: 500, notifications: [] },
+  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000, points: 2000, shards: 100, notifications: [] },
+  { nick: "ToshkentBoy", pass: "pass123", role: "user", regDate: "2026-01-18", rank: "Rage+", spent: 150000, points: 0, shards: 0, notifications: [] },
+  { nick: "AzizbekMC", pass: "pass123", role: "user", regDate: "2026-01-20", rank: "Rage+", spent: 120000, points: 500, shards: 0, notifications: [] },
+  { nick: "NightCraft", pass: "pass123", role: "user", regDate: "2026-01-22", rank: "Rage+", spent: 90000, points: 0, shards: 100, notifications: [] },
+  { nick: "OlimjonUZ", pass: "pass123", role: "user", regDate: "2026-01-25", rank: "RagePro", spent: 10000, points: 0, shards: 0, notifications: [] },
+  { nick: "DonerKing", pass: "pass123", role: "user", regDate: "2026-01-28", rank: "RagePro", spent: 10000, points: 0, shards: 0, notifications: [] },
 ];
 
 const INITIAL_TXS: Transaction[] = [
@@ -97,7 +99,12 @@ export function useStore() {
     if (s) {
       try { 
         const parsed = JSON.parse(s);
-        const items = parsed.map((u: any) => ({ ...u, notifications: u.notifications || [] }));
+        const items = parsed.map((u: any) => ({ 
+          ...u, 
+          points: u.points || 0,
+          shards: u.shards || 0,
+          notifications: u.notifications || [] 
+        }));
         return migrateUsers(pruneTrash(items)); 
       } catch {}
     }
@@ -186,6 +193,8 @@ export function useStore() {
       regDate: new Date().toISOString().split("T")[0],
       rank: "Oddiy",
       spent: 0,
+      points: 0,
+      shards: 0,
       notifications: [],
     };
 
@@ -221,7 +230,7 @@ export function useStore() {
           if (status === "To'langan" && t.status !== "To'langan") {
             const newNotif: Notification = {
               id: Math.random().toString(36).substr(2, 9),
-              text: `✅ Chekingiz tasdiqlandi! ${t.pkg} ranki berildi.`,
+              text: `✅ Chekingiz tasdiqlandi! ${t.pkg} xaridi faollashtirildi.`,
               time: nowLabel(),
               read: false,
             };
@@ -229,24 +238,47 @@ export function useStore() {
             setUsers((usrs) =>
               usrs.map((u) => {
                 if (u.nick.toLowerCase() === t.player.toLowerCase()) {
-                  return { 
+                  let updatedUser = { 
                     ...u, 
-                    rank: t.pkg, 
                     spent: u.spent + t.price, 
                     notifications: [newNotif, ...u.notifications]
                   };
+
+                  // Point yoki Shard bo'lsa balansni yangilaymiz
+                  if (t.pkg.toLowerCase().includes("point")) {
+                    const amount = parseInt(t.pkg.replace(/\D/g, '')) || 0;
+                    updatedUser.points += amount;
+                  } else if (t.pkg.toLowerCase().includes("shard")) {
+                    const amount = parseInt(t.pkg.replace(/\D/g, '')) || 0;
+                    updatedUser.shards += amount;
+                  } else {
+                    // Rank bo'lsa rankni yangilaymiz
+                    updatedUser.rank = t.pkg;
+                  }
+                  
+                  return updatedUser;
                 }
                 return u;
               })
             );
 
             if (currentUser && currentUser.nick.toLowerCase() === t.player.toLowerCase()) {
-              setCurrentUser((prev) => prev ? ({
-                ...prev,
-                rank: t.pkg,
-                spent: prev.spent + t.price,
-                notifications: [newNotif, ...prev.notifications]
-              }) : null);
+              setCurrentUser((prev) => {
+                if (!prev) return null;
+                let updated = {
+                  ...prev,
+                  spent: prev.spent + t.price,
+                  notifications: [newNotif, ...prev.notifications]
+                };
+                if (t.pkg.toLowerCase().includes("point")) {
+                  updated.points += parseInt(t.pkg.replace(/\D/g, '')) || 0;
+                } else if (t.pkg.toLowerCase().includes("shard")) {
+                  updated.shards += parseInt(t.pkg.replace(/\D/g, '')) || 0;
+                } else {
+                  updated.rank = t.pkg;
+                }
+                return updated;
+              });
             }
           }
           return { ...t, status };

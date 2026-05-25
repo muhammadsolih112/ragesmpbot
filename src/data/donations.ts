@@ -110,7 +110,7 @@ export const currencies: Donation[] = [
   {
     id: "shards_1k",
     name: "1.000 Shards",
-    price: 3000,
+    price: 1000,
     color: "from-cyan-400 via-blue-500 to-indigo-600",
     tagline: "Noyob buyumlar uchun kristallar.",
     emoji: "💎",

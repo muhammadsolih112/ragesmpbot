@@ -79,6 +79,8 @@ export default function App() {
               regDate: u.regDate || new Date().toISOString().split('T')[0],
               rank: u.rank || "Oddiy",
               spent: u.spent || 0,
+              points: u.points || 0,
+              shards: u.shards || 0,
               notifications: u.notifications || []
             }));
             const mergedUsers = [...botUsers, ...existingUsers.filter((eu: any) => !botUsers.find((bu: any) => bu.nick === eu.nick))];

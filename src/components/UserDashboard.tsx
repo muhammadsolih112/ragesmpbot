@@ -1,5 +1,40 @@
+import { useState, useEffect, useRef } from "react";
 import type { User, Transaction } from "../data/store";
 import { donations, fmtUZS, type Donation } from "../data/donations";
+
+function FloatingText({ value, color }: { value: string; color: string }) {
+  return (
+    <div className={`absolute -top-6 left-1/2 -translate-x-1/2 font-black text-sm animate-bounce-out ${color} pointer-events-none`}>
+      {value}
+    </div>
+  );
+}
+
+function BalanceDisplay({ label, value, icon, color, unit, unitColor, bg }: { label: string; value: number; icon: string; color: string; unit: string; unitColor: string; bg: string }) {
+  const prevValue = useRef(value);
+  const [diff, setDiff] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (value > prevValue.current) {
+      setDiff(value - prevValue.current);
+      const timer = setTimeout(() => setDiff(null), 2000);
+      prevValue.current = value;
+      return () => clearTimeout(timer);
+    }
+    prevValue.current = value;
+  }, [value]);
+
+  return (
+    <div className="relative">
+      <div className="text-xs uppercase tracking-widest text-neutral-500 font-semibold">{icon} {label}</div>
+      <div className={`text-xl font-black ${color} mt-1 flex items-center gap-1.5 relative`}>
+        {value.toLocaleString()}
+        <span className={`text-[10px] ${bg} px-1.5 py-0.5 rounded ${unitColor}`}>{unit}</span>
+        {diff !== null && <FloatingText value={`+${diff.toLocaleString()}`} color={color} />}
+      </div>
+    </div>
+  );
+}
 
 export default function UserDashboard({
   user,
@@ -67,12 +102,30 @@ export default function UserDashboard({
               </div>
 
               <div className="mt-8 pt-6 border-t border-orange-500/20 grid grid-cols-2 gap-4">
+                <BalanceDisplay 
+                  label="Pointlar" 
+                  value={user.points} 
+                  icon="💎" 
+                  color="text-blue-500" 
+                  unit="PTS" 
+                  unitColor="text-blue-600" 
+                  bg="bg-blue-500/10" 
+                />
+                <BalanceDisplay 
+                  label="Shardlar" 
+                  value={user.shards} 
+                  icon="🔮" 
+                  color="text-purple-500" 
+                  unit="SHD" 
+                  unitColor="text-purple-600" 
+                  bg="bg-purple-500/10" 
+                />
                 <div>
-                  <div className="text-xs uppercase tracking-widest text-neutral-500 font-semibold">Jami xarajat</div>
+                  <div className="text-xs uppercase tracking-widest text-neutral-500 font-semibold">💰 Jami xarajat</div>
                   <div className="text-xl font-black fire-text mt-1">{fmtUZS(user.spent)}</div>
                 </div>
                 <div>
-                  <div className="text-xs uppercase tracking-widest text-neutral-500 font-semibold">Ro'yxatdan o'tgan</div>
+                  <div className="text-xs uppercase tracking-widest text-neutral-500 font-semibold">📅 Ro'yxatdan o'tgan</div>
                   <div className="text-sm font-bold text-neutral-700 dark:text-neutral-300 mt-1.5 font-mono">{user.regDate}</div>
                 </div>
               </div>

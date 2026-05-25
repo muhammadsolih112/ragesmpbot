@@ -16,10 +16,18 @@ export default function PurchaseModal({
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [isSwiping, setIsSwiping] = useState(false);
 
   const isCurrency = d?.id.includes("points") || d?.id.includes("shards");
   const unitPrice = d?.price || 0;
   const totalPrice = isCurrency ? unitPrice * quantity : unitPrice;
+
+  const handleQuantityChange = (newVal: number) => {
+    setIsSwiping(true);
+    setQuantity(newVal);
+    setTimeout(() => setIsSwiping(false), 300);
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light");
+  };
 
   useEffect(() => {
     if (d) {
