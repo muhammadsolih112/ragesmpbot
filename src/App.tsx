@@ -49,13 +49,14 @@ export default function App() {
     const syncData = urlParams.get("admin_sync");
     if (syncData) {
       try {
-        // More robust Base64 decoding for Unicode
+        // Safe base64 decoding with error handling
         const binary = window.atob(syncData);
         const bytes = new Uint8Array(binary.length);
         for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         const decodedStr = new TextDecoder().decode(bytes);
         const decoded = JSON.parse(decodedStr);
-        if (decoded.txs) {
+        
+        if (decoded && decoded.txs) {
           // Botdan kelgan buyurtmalarni formatlaymiz
           const botTxs = decoded.txs.map((t: any) => ({
             id: String(t.id),
@@ -93,21 +94,25 @@ export default function App() {
             
             const currentUserStr = localStorage.getItem("ragesmp_current_user");
             if (currentUserStr) {
-              const currentU = JSON.parse(currentUserStr);
-              const updatedMe = botUsers.find((bu: any) => bu.nick.toLowerCase() === currentU.nick.toLowerCase());
-              if (updatedMe) {
-                localStorage.setItem("ragesmp_current_user", JSON.stringify({ ...currentU, ...updatedMe }));
-              }
+              try {
+                const currentU = JSON.parse(currentUserStr);
+                const updatedMe = botUsers.find((bu: any) => bu.nick.toLowerCase() === currentU.nick.toLowerCase());
+                if (updatedMe) {
+                  localStorage.setItem("ragesmp_current_user", JSON.stringify({ ...currentU, ...updatedMe }));
+                }
+              } catch {}
             }
           }
           
           // URL'ni tozalaymiz va yangilaymiz
           window.history.replaceState({}, "", window.location.pathname);
           setTimeout(() => window.location.reload(), 100);
-          return; // Exit effect to prevent further execution
+          return; 
         }
       } catch (e) {
-        console.error("Sync error:", e);
+        console.error("Sync error details:", e);
+        // Silently clear URL if corrupted sync data
+        window.history.replaceState({}, "", window.location.pathname);
       }
     }
 

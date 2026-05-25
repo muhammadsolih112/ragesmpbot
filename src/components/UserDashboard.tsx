@@ -11,24 +11,25 @@ function FloatingText({ value, color }: { value: string; color: string }) {
 }
 
 function BalanceDisplay({ label, value, icon, color, unit, unitColor, bg }: { label: string; value: number; icon: string; color: string; unit: string; unitColor: string; bg: string }) {
-  const prevValue = useRef(value);
+  const safeValue = Number(value) || 0;
+  const prevValue = useRef(safeValue);
   const [diff, setDiff] = useState<number | null>(null);
 
   useEffect(() => {
-    if (value > prevValue.current) {
-      setDiff(value - prevValue.current);
+    if (safeValue > prevValue.current) {
+      setDiff(safeValue - prevValue.current);
       const timer = setTimeout(() => setDiff(null), 2000);
-      prevValue.current = value;
+      prevValue.current = safeValue;
       return () => clearTimeout(timer);
     }
-    prevValue.current = value;
-  }, [value]);
+    prevValue.current = safeValue;
+  }, [safeValue]);
 
   return (
     <div className="relative">
       <div className="text-xs uppercase tracking-widest text-neutral-500 font-semibold">{icon} {label}</div>
       <div className={`text-xl font-black ${color} mt-1 flex items-center gap-1.5 relative`}>
-        {value.toLocaleString()}
+        {safeValue.toLocaleString()}
         <span className={`text-[10px] ${bg} px-1.5 py-0.5 rounded ${unitColor}`}>{unit}</span>
         {diff !== null && <FloatingText value={`+${diff.toLocaleString()}`} color={color} />}
       </div>
@@ -96,13 +97,13 @@ export default function UserDashboard({
               <div className="absolute top-0 right-0 h-32 w-32 bg-orange-500/20 blur-2xl rounded-full" />
               <div className="relative flex items-center gap-4">
                 <div className="h-16 w-16 rounded-2xl fire-gradient grid place-items-center text-white text-2xl font-black shadow-lg shadow-orange-500/40">
-                  {user.nick[0].toUpperCase()}
+                  {user.nick?.[0]?.toUpperCase() || '?'}
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold tracking-tight">{user.nick}</h2>
+                  <h2 className="text-xl font-bold tracking-tight">{user.nick || "O'yinchi"}</h2>
                   <div className="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full bg-orange-500/10 border border-orange-500/30 text-xs font-semibold text-orange-600 dark:text-orange-400">
                     <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-orange-500" />
-                    Daraja: {user.rank}
+                    Daraja: {user.rank || "Oddiy"}
                   </div>
                 </div>
               </div>
