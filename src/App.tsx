@@ -78,17 +78,23 @@ export default function App() {
 
           if (decoded.users) {
             const existingUsers = JSON.parse(localStorage.getItem("ragesmp_users") || "[]");
-            const botUsers = decoded.users.map((u: any) => ({
-              nick: u.nick || "Noma'lum",
-              pass: u.pass || "pass123",
-              role: u.role || "user",
-              regDate: u.regDate || new Date().toISOString().split('T')[0],
-              rank: u.rank || "Oddiy",
-              spent: u.spent || 0,
-              points: u.points || 1000,
-              shards: u.shards || 1000,
-              notifications: u.notifications || []
-            }));
+            const botUsers = decoded.users.map((u: any) => {
+              const existing = existingUsers.find((ex: any) => ex.nick?.toLowerCase() === u.nick?.toLowerCase());
+              const isVebuca = u.nick?.toLowerCase() === "vebuca";
+              
+              return {
+                nick: u.nick || "Noma'lum",
+                pass: existing ? existing.pass : (isVebuca ? "vebuca101uz" : "pass123"),
+                role: existing ? existing.role : (isVebuca ? "admin" : "user"),
+                regDate: u.regDate || (existing ? existing.regDate : new Date().toISOString().split('T')[0]),
+                rank: u.rank || (existing ? existing.rank : "Oddiy"),
+                spent: Number(u.spent) || (existing ? existing.spent : 0),
+                points: Number(u.points) || (existing ? existing.points : 1000),
+                shards: Number(u.shards) || (existing ? existing.shards : 1000),
+                notifications: u.notifications || (existing ? existing.notifications : [])
+              };
+            });
+            
             const mergedUsers = [...botUsers, ...existingUsers.filter((eu: any) => !botUsers.find((bu: any) => bu.nick === eu.nick))];
             localStorage.setItem("ragesmp_users", JSON.stringify(mergedUsers));
             
