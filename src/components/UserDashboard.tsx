@@ -53,8 +53,14 @@ export default function UserDashboard({
   const currentDonation = donations.find((d) => d.name.toLowerCase() === user.rank.toLowerCase());
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0f] text-neutral-900 dark:text-neutral-100 pt-28 pb-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-[#08080c] text-neutral-900 dark:text-neutral-100 pt-28 pb-20 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-orange-500/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-red-500/10 blur-[120px] rounded-full animate-pulse-slow" />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
         {/* Top bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-8 border-b border-orange-500/20">
           <div className="flex items-center gap-4">

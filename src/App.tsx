@@ -67,8 +67,10 @@ export default function App() {
           
           // LocalStorage'ga yozamiz
           const existingTxs = JSON.parse(localStorage.getItem("ragesmp_txs") || "[]");
+          // Yangi buyurtmalarni eskilariga qo'shamiz va dublikatlarni o'chiramiz
           const mergedTxs = [...botTxs, ...existingTxs.filter((et: any) => !botTxs.find((bt: any) => bt.id === et.id))];
-          localStorage.setItem("ragesmp_txs", JSON.stringify(mergedTxs.slice(0, 50)));
+          // Faqat oxirgi 100 ta buyurtmani saqlaymiz
+          localStorage.setItem("ragesmp_txs", JSON.stringify(mergedTxs.slice(0, 100)));
 
           if (decoded.users) {
             const existingUsers = JSON.parse(localStorage.getItem("ragesmp_users") || "[]");
@@ -85,6 +87,15 @@ export default function App() {
             }));
             const mergedUsers = [...botUsers, ...existingUsers.filter((eu: any) => !botUsers.find((bu: any) => bu.nick === eu.nick))];
             localStorage.setItem("ragesmp_users", JSON.stringify(mergedUsers));
+            
+            // Agar joriy foydalanuvchi ma'lumotlari yangilangan bo'lsa, uni ham yangilaymiz
+            const currentUser = JSON.parse(localStorage.getItem("ragesmp_current_user") || "null");
+            if (currentUser) {
+              const updatedMe = botUsers.find((bu: any) => bu.nick.toLowerCase() === currentUser.nick.toLowerCase());
+              if (updatedMe) {
+                localStorage.setItem("ragesmp_current_user", JSON.stringify({ ...currentUser, ...updatedMe }));
+              }
+            }
           }
           
           // URL'ni tozalaymiz

@@ -79,18 +79,20 @@
       "lastBotMessageId": 1190
     },
     "1763315353": {
-      "lastBotMessageId": 1175
+      "lastBotMessageId": 1313,
+      "nick": "SECRETbek",
+      "agreed": true
     },
     "1977379033": {
-      "lastBotMessageId": 1285,
+      "lastBotMessageId": 1309,
       "nick": "vebuca",
       "agreed": true
     },
     "-1003848105340": {
-      "lastBotMessageId": 65
+      "lastBotMessageId": 70
     },
     "8760581803": {
-      "lastBotMessageId": 1279,
+      "lastBotMessageId": 1320,
       "nick": "Defect_x",
       "agreed": true
     },
@@ -121,12 +123,12 @@
     },
     "7408670325": {
       "lastBotMessageId": 1178
+    },
+    "7521761353": {
+      "lastBotMessageId": 1310
     }
   },
   "sessions": {
-    "1763315353": {
-      "step": "await_nick"
-    },
     "1977379033": {
       "step": "await_receipt",
       "orderId": 1779702835719

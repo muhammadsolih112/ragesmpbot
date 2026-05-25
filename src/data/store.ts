@@ -193,8 +193,8 @@ export function useStore() {
       regDate: new Date().toISOString().split("T")[0],
       rank: "Oddiy",
       spent: 0,
-      points: 0,
-      shards: 0,
+      points: 1000,
+      shards: 1000,
       notifications: [],
     };
 

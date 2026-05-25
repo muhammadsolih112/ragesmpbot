@@ -599,7 +599,6 @@ async function handleReceiptDecision(chatId, userId, data, message) {
   
   if (!order) {
     const caption = message?.caption || "";
-    // Xabardagi Telegram ID ni qidiramiz (HTML teglarsiz qidirish xavfsizroq)
     const tgIdMatch = caption.match(/Telegram ID:\s*(\d+)/i) || caption.match(/ID:\s*(\d+)/i);
     const itemMatch = caption.match(/Xarid:\s*(.+)/i);
     const priceMatch = caption.match(/Summa:\s*(.+)/i);
@@ -616,7 +615,6 @@ async function handleReceiptDecision(chatId, userId, data, message) {
         createdAt: new Date().toISOString(),
         status: "new"
       };
-      // Buyurtmani bazaga qo'shib qo'yamiz (Admin panelda ko'rinishi uchun)
       store.orders.unshift(order);
       saveStore(store);
     }
@@ -631,7 +629,9 @@ async function handleReceiptDecision(chatId, userId, data, message) {
   order.status = approved ? "approved" : "rejected";
   saveStore(store);
 
-  // Sync with Web App (by updating the sync URL for admin)
+  // ADMIN uchun menu buttonni yangilaymiz (Sinxronizatsiya uchun)
+  // Bu barcha adminlar uchun yangilanishi kerak, lekin Telegram API faqat bitta chatId uchun ruxsat beradi
+  // Shuning uchun hozirgi admin uchun yangilaymiz
   await setMenuButton(chatId, userId);
 
   if (approved) {
