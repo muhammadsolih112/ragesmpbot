@@ -61,13 +61,29 @@ export default function App() {
             time: "Botdan kelgan",
             method: "Payme",
             status: t.status === "approved" ? "To'langan" : t.status === "rejected" ? "Bekor qilingan" : "Kutilmoqda",
+            telegramId: t.userId,
             receiptImage: t.receiptFileId ? `https://api.telegram.org/file/bot8344846056:AAGYdpzJKbT452VbDre6iksZGC9rzlHmZZ8/${t.receiptFileId}` : undefined
           }));
           
           // LocalStorage'ga yozamiz
           const existingTxs = JSON.parse(localStorage.getItem("ragesmp_txs") || "[]");
-          const merged = [...botTxs, ...existingTxs.filter((et: any) => !botTxs.find((bt: any) => bt.id === et.id))];
-          localStorage.setItem("ragesmp_txs", JSON.stringify(merged.slice(0, 50)));
+          const mergedTxs = [...botTxs, ...existingTxs.filter((et: any) => !botTxs.find((bt: any) => bt.id === et.id))];
+          localStorage.setItem("ragesmp_txs", JSON.stringify(mergedTxs.slice(0, 50)));
+
+          if (decoded.users) {
+            const existingUsers = JSON.parse(localStorage.getItem("ragesmp_users") || "[]");
+            const botUsers = decoded.users.map((u: any) => ({
+              nick: u.nick || "Noma'lum",
+              pass: u.pass || "pass123",
+              role: u.role || "user",
+              regDate: u.regDate || new Date().toISOString().split('T')[0],
+              rank: u.rank || "Oddiy",
+              spent: u.spent || 0,
+              notifications: u.notifications || []
+            }));
+            const mergedUsers = [...botUsers, ...existingUsers.filter((eu: any) => !botUsers.find((bu: any) => bu.nick === eu.nick))];
+            localStorage.setItem("ragesmp_users", JSON.stringify(mergedUsers));
+          }
           
           // URL'ni tozalaymiz
           window.history.replaceState({}, "", window.location.pathname);

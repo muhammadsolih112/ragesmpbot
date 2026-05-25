@@ -10,6 +10,7 @@ export type Transaction = {
   method: "Click" | "Payme" | "Uzcard" | "Humo";
   status: "To'langan" | "Kutilmoqda" | "Bekor qilingan";
   receiptImage?: string; // Base64 encoded image
+  telegramId?: string; // Telegram user ID for notifications
   deletedAt?: string;
   deletedAtLabel?: string;
   previousStatus?: Transaction["status"];

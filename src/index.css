@@ -37,6 +37,46 @@ body {
   overflow-x: hidden;
 }
 
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.995); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes flicker {
+  0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% {
+    opacity: 0.99;
+    text-shadow: -1px -1px 0 rgba(255, 255, 255, 0.4), 1px -1px 0 rgba(255, 255, 255, 0.4), -1px 1px 0 rgba(255, 255, 255, 0.4), 1px 1px 0 rgba(255, 255, 255, 0.4), 0 -2px 8px rgba(255, 255, 255, 0.4), 0 0 2px rgba(255, 255, 255, 0.4), 0 0 40px rgba(255, 122, 24, 0.4), 0 0 80px rgba(255, 122, 24, 0.4), 0 0 120px rgba(255, 122, 24, 0.4);
+  }
+  20%, 21.999%, 63%, 63.999%, 65%, 69.999% {
+    opacity: 0.4;
+    text-shadow: none;
+  }
+}
+
+.flicker {
+  animation: flicker 4s linear infinite;
+}
+
+/* Custom scrollbar for admin panel */
+.admin-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.admin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 122, 24, 0.2);
+  border-radius: 10px;
+}
+.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 122, 24, 0.5);
+}
+
 .dark body {
   background: var(--tg-bg);
   color: var(--tg-text);

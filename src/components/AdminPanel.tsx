@@ -53,6 +53,31 @@ export default function AdminPanel({
   const [simMethod, setSimMethod] = useState<Transaction["method"]>("Payme");
   const [simMsg, setSimMsg] = useState("");
 
+  const handleQuickAction = async (t: Transaction, status: Transaction["status"]) => {
+    onUpdateTxStatus(t.id, status);
+    
+    // Telegram bildirishnoma yuborish
+    if (t.telegramId) {
+      try {
+        const text = status === "To'langan" 
+          ? `✅🎉 <b>Chekingiz tasdiqlandi!</b>\n\n🎮 Endi o'yinga kirib-chiqib, sotib olgan narsalaringizni tekshirib ko'rishingiz mumkin.\n\n🛒 Xarid: <b>${t.pkg}</b>\n💰 Summa: <b>${fmtUZS(t.price)}</b>\n\n🔥 RageSMP bilan zavqlaning!`
+          : `❌ <b>To'lovingiz bekor qilingan.</b>\n\nIltimos, qaytadan urinib ko'ring yoki admin bilan bog'laning.\n\n🛒 Xarid: <b>${t.pkg}</b>`;
+
+        await fetch(`https://api.telegram.org/bot8344846056:AAGYdpzJKbT452VbDre6iksZGC9rzlHmZZ8/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: t.telegramId,
+            text,
+            parse_mode: "HTML"
+          })
+        });
+      } catch (err) {
+        console.error("Notification error:", err);
+      }
+    }
+  };
+
   const allTxs = txs.map((t) => ({ ...t, source: "site", password: "" }));
 
   // Calculated metrics
@@ -84,8 +109,14 @@ export default function AdminPanel({
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-[#08080c] text-neutral-900 dark:text-neutral-100 pt-28 pb-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+    <div className="min-h-screen bg-neutral-50 dark:bg-[#08080c] text-neutral-900 dark:text-neutral-100 pt-28 pb-20 relative overflow-hidden">
+      {/* Background Decorations */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-orange-500/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-red-500/10 blur-[120px] rounded-full animate-pulse-slow" />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 relative z-10">
         {/* Top Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-8 border-b border-orange-500/20">
           <div className="flex items-center gap-4">
@@ -97,7 +128,7 @@ export default function AdminPanel({
               Asosiy saytga qaytish
             </button>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight flicker">
                 Rage<span className="fire-text">SMP</span> Boshqaruv Paneli
               </h1>
               <div className="text-xs text-neutral-500 mt-0.5">Admin: <span className="text-orange-500 font-bold">vebuca</span></div>
@@ -141,56 +172,108 @@ export default function AdminPanel({
             {/* Top Cards */}
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { label: "Taqdiqlangan Daromad", value: fmtUZS(totalRev), sub: "To'langan barcha xaridlar", color: "from-amber-500 to-orange-500" },
-                { label: "Kutilayotgan To'lovlar", value: pendingCount, sub: "Tekshiruvdagi arizalar", color: "from-orange-500 to-red-500" },
-                { label: "Sotilgan Paketlar", value: totalSales, sub: "Faol donatlar soni", color: "from-red-500 to-rose-500" },
-                { label: "Jami Foydalanuvchilar", value: users.length, sub: "Ro'yxatdan o'tgan o'yinchilar", color: "from-rose-500 to-amber-500" },
+                { label: "Taqdiqlangan Daromad", value: fmtUZS(totalRev), sub: "To'langan barcha xaridlar", color: "from-amber-500 to-orange-500", icon: "💰" },
+                { label: "Kutilayotgan To'lovlar", value: pendingCount, sub: "Tekshiruvdagi arizalar", color: "from-orange-500 to-red-500", icon: "⏳" },
+                { label: "Sotilgan Paketlar", value: totalSales, sub: "Faol donatlar soni", color: "from-red-500 to-rose-500", icon: "📦" },
+                { label: "Jami Foydalanuvchilar", value: users.length, sub: "Ro'yxatdan o'tgan o'yinchilar", color: "from-rose-500 to-amber-500", icon: "👥" },
               ].map((c, i) => (
-                <div key={i} className="relative rounded-3xl border border-orange-500/20 bg-white dark:bg-white/[0.03] p-6 overflow-hidden shadow-xl shadow-orange-500/5">
-                  <div className={`absolute top-0 right-0 h-24 w-24 bg-gradient-to-br ${c.color} opacity-20 blur-2xl rounded-full`} />
-                  <div className="text-xs uppercase tracking-widest text-neutral-500 font-semibold">{c.label}</div>
-                  <div className="text-2xl sm:text-3xl font-black fire-text mt-2">{c.value}</div>
-                  <div className="text-xs text-neutral-400 mt-2">{c.sub}</div>
+                <div key={i} className="relative group rounded-3xl border border-orange-500/20 bg-white dark:bg-white/[0.03] p-6 overflow-hidden shadow-xl shadow-orange-500/5 hover:border-orange-500/50 transition-all duration-500">
+                  <div className={`absolute top-0 right-0 h-24 w-24 bg-gradient-to-br ${c.color} opacity-10 blur-2xl rounded-full group-hover:opacity-20 transition-opacity`} />
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="text-xs uppercase tracking-widest text-neutral-500 font-bold">{c.label}</div>
+                      <div className="text-2xl sm:text-3xl font-black fire-text mt-2">{c.value}</div>
+                    </div>
+                    <div className="text-2xl opacity-50 group-hover:opacity-100 group-hover:scale-110 transition-all">{c.icon}</div>
+                  </div>
+                  <div className="text-[10px] text-neutral-400 mt-2 font-medium">{c.sub}</div>
                 </div>
               ))}
             </div>
 
+            {/* Pending Requests (Highlighted) */}
+            {pendingCount > 0 && (
+              <div className="rounded-[32px] border-2 border-orange-500/30 bg-orange-500/5 p-6 animate-pulse-slow">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-xl bg-orange-500 flex items-center justify-center text-white shadow-lg shadow-orange-500/40">
+                      <svg className="h-6 w-6 animate-bounce" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <h3 className="text-xl font-black tracking-tight">Kutilayotgan yangi buyurtmalar</h3>
+                  </div>
+                  <span className="px-3 py-1 rounded-full bg-orange-500 text-white text-[10px] font-black uppercase tracking-widest">DIQQAT</span>
+                </div>
+                
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {allTxs.filter(t => t.status === "Kutilmoqda").slice(0, 6).map((t) => (
+                    <div key={t.id} className="bg-white dark:bg-[#12121a] rounded-2xl p-4 border border-orange-500/20 shadow-lg hover:scale-[1.02] transition-all">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-black text-sm">{t.player}</div>
+                          <div className="text-[10px] text-orange-500 font-bold uppercase tracking-widest mt-0.5">{t.pkg}</div>
+                        </div>
+                        <div className="font-mono font-bold text-xs text-neutral-500">{t.id}</div>
+                      </div>
+                      <div className="mt-3 font-black text-lg fire-text">{fmtUZS(t.price)}</div>
+                      <div className="mt-4 flex gap-2">
+                        <button 
+                          onClick={() => handleQuickAction(t, "To'langan")}
+                          className="flex-1 py-2 rounded-xl bg-emerald-500 text-white text-[11px] font-black hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all"
+                        >
+                          TASDIQLASH
+                        </button>
+                        <button 
+                          onClick={() => handleQuickAction(t, "Bekor qilingan")}
+                          className="flex-1 py-2 rounded-xl bg-red-500 text-white text-[11px] font-black hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all"
+                        >
+                          RAD ETISH
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Visual Stats Bar */}
-            <div className="rounded-3xl border border-orange-500/20 bg-white dark:bg-white/[0.03] p-6">
-              <h3 className="text-lg font-bold mb-4">Sotuvlar taqsimoti</h3>
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <h4 className="text-xs uppercase tracking-widest text-neutral-500 font-bold">Paketlar</h4>
+            <div className="rounded-3xl border border-orange-500/20 bg-white dark:bg-white/[0.03] p-6 shadow-xl shadow-orange-500/5">
+              <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-orange-500" />
+                Sotuvlar taqsimoti
+              </h3>
+              <div className="grid md:grid-cols-2 gap-12">
+                <div className="space-y-6">
+                  <h4 className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-black">Paketlar</h4>
                   {["SMP Elite", "Rage+", "RagePro"].map((pkg) => {
                     const count = allTxs.filter((t) => t.pkg === pkg && t.status === "To'langan").length;
                     const max = Math.max(...["SMP Elite", "Rage+", "RagePro"].map((p) => allTxs.filter((x) => x.pkg === p && x.status === "To'langan").length), 1);
                     const pct = (count / max) * 100;
                     return (
-                      <div key={pkg} className="space-y-1">
-                        <div className="flex justify-between text-sm font-semibold">
-                          <span>{pkg}</span>
+                      <div key={pkg} className="space-y-2 group">
+                        <div className="flex justify-between text-sm font-bold">
+                          <span className="group-hover:text-orange-500 transition-colors">{pkg}</span>
                           <span className="text-neutral-500">{count} ta</span>
                         </div>
-                        <div className="h-2 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5">
+                        <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5">
                           <div className="h-full rounded-full fire-gradient transition-all duration-1000" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <div className="space-y-4">
-                  <h4 className="text-xs uppercase tracking-widest text-neutral-500 font-bold">Xizmatlar va Valyuta</h4>
-                  {["Unban", "Unmute", "10.000 Point", "1.000 Shards"].map((pkg) => {
+                <div className="space-y-6">
+                  <h4 className="text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-black">Boshqalar</h4>
+                  {["Unban", "Unmute", "1.000 Point", "1.000 Shards"].map((pkg) => {
                     const count = allTxs.filter((t) => t.pkg === pkg && t.status === "To'langan").length;
-                    const max = Math.max(...["Unban", "Unmute", "10.000 Point", "1.000 Shards"].map((p) => allTxs.filter((x) => x.pkg === p && x.status === "To'langan").length), 1);
+                    const max = Math.max(...["Unban", "Unmute", "1.000 Point", "1.000 Shards"].map((p) => allTxs.filter((x) => x.pkg === p && x.status === "To'langan").length), 1);
                     const pct = (count / max) * 100;
                     return (
-                      <div key={pkg} className="space-y-1">
-                        <div className="flex justify-between text-sm font-semibold">
-                          <span>{pkg}</span>
+                      <div key={pkg} className="space-y-2 group">
+                        <div className="flex justify-between text-sm font-bold">
+                          <span className="group-hover:text-blue-500 transition-colors">{pkg}</span>
                           <span className="text-neutral-500">{count} ta</span>
                         </div>
-                        <div className="h-2 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5">
+                        <div className="h-2.5 w-full bg-neutral-100 dark:bg-white/5 rounded-full overflow-hidden p-0.5">
                           <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-1000" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
@@ -201,40 +284,41 @@ export default function AdminPanel({
             </div>
 
             {/* Recent 5 transactions overview */}
-            <div className="rounded-3xl border border-orange-500/20 bg-white dark:bg-white/[0.03] p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">So'nggi xaridlar</h3>
-                <button onClick={() => setTab("txs")} className="text-xs font-bold text-orange-500 hover:underline">
+            <div className="rounded-3xl border border-orange-500/20 bg-white dark:bg-white/[0.03] p-6 shadow-xl shadow-orange-500/5">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  So'nggi harakatlar
+                </h3>
+                <button onClick={() => setTab("txs")} className="text-xs font-black text-orange-500 uppercase tracking-widest hover:underline">
                   Barchasini ko'rish →
                 </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
                   <thead>
-                    <tr className="border-b border-orange-500/10 text-xs uppercase tracking-widest text-neutral-500 font-semibold">
+                    <tr className="border-b border-orange-500/10 text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-black">
                       <th className="py-3 px-4">O'yinchi</th>
                       <th className="py-3 px-4">Paket</th>
                       <th className="py-3 px-4">Narx</th>
-                      <th className="py-3 px-4">To'lov turi</th>
                       <th className="py-3 px-4">Sana</th>
                       <th className="py-3 px-4 text-right">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-orange-500/10">
-                    {allTxs.slice(0, 5).map((t) => (
-                      <tr key={t.id} className="hover:bg-orange-500/5 transition-colors">
-                        <td className="py-3 px-4 font-bold">{t.player}</td>
-                        <td className="py-3 px-4 font-semibold text-orange-500">{t.pkg}</td>
-                        <td className="py-3 px-4 font-mono">{fmtUZS(t.price)}</td>
-                        <td className="py-3 px-4 text-xs text-neutral-500">{t.method}</td>
-                        <td className="py-3 px-4 text-xs text-neutral-500">{t.date}</td>
+                    {allTxs.slice(0, 8).map((t) => (
+                      <tr key={t.id} className="hover:bg-orange-500/5 transition-colors group">
+                        <td className="py-3 px-4 font-black">{t.player}</td>
+                        <td className="py-3 px-4 font-bold text-orange-500">{t.pkg}</td>
+                        <td className="py-3 px-4 font-mono font-bold">{fmtUZS(t.price)}</td>
+                        <td className="py-3 px-4 text-[11px] text-neutral-500 font-medium">{t.date}</td>
                         <td className="py-3 px-4 text-right">
                           <span
-                            className={`inline-block px-2.5 py-1 rounded-md text-[11px] font-bold ${
+                            className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
                               t.status === "To'langan"
                                 ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
                                 : t.status === "Kutilmoqda"
-                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse"
                                 : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
                             }`}
                           >
@@ -295,33 +379,45 @@ export default function AdminPanel({
                   <tbody className="divide-y divide-orange-500/10">
                     {filteredTxs.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-12 text-center text-neutral-500 text-sm">
-                          To'lovlar topilmadi.
+                        <td colSpan={6} className="py-24 text-center">
+                          <div className="flex flex-col items-center justify-center gap-3 opacity-30">
+                            <div className="text-6xl">📭</div>
+                            <div className="text-sm font-black uppercase tracking-widest">To'lovlar topilmadi</div>
+                          </div>
                         </td>
                       </tr>
                     ) : (
                       filteredTxs.map((t) => (
-                        <tr key={t.id} className="hover:bg-orange-500/5 transition-colors items-center">
+                        <tr key={t.id} className="hover:bg-orange-500/5 transition-colors group">
                           <td className="py-4 px-6">
-                            <div className="font-mono font-bold text-xs text-neutral-600 dark:text-neutral-400">{t.id}</div>
-                            <div className="text-[11px] text-neutral-500 mt-0.5">{t.date}</div>
+                            <div className="font-mono font-bold text-xs text-neutral-600 dark:text-neutral-400 group-hover:text-orange-500 transition-colors">{t.id}</div>
+                            <div className="text-[10px] text-neutral-500 mt-1 font-medium">{t.date}</div>
                           </td>
-                          <td className="py-4 px-6 font-bold">{t.player}</td>
                           <td className="py-4 px-6">
-                            <span className="inline-block px-2.5 py-0.5 rounded-md text-xs font-black text-white fire-gradient shadow-sm">
+                            <div className="font-black text-sm">{t.player}</div>
+                            {t.telegramId && <div className="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-0.5">TG: {t.telegramId}</div>}
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className="inline-block px-2.5 py-0.5 rounded-md text-[10px] font-black text-white fire-gradient shadow-sm uppercase tracking-wider">
                               {t.pkg}
                             </span>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="font-bold text-orange-500">{fmtUZS(t.price)}</div>
-                            <div className="text-[11px] text-neutral-500 mt-0.5">{t.method}</div>
+                            <div className="font-black text-orange-500 text-base">{fmtUZS(t.price)}</div>
+                            <div className="text-[10px] text-neutral-500 mt-1 font-bold uppercase tracking-widest">{t.method}</div>
                             {t.receiptImage && (
                               <button 
                                 onClick={() => {
                                   const win = window.open("");
-                                  win?.document.write(`<img src="${t.receiptImage}" style="max-width:100%">`);
+                                  win?.document.write(`
+                                    <html>
+                                      <body style="margin:0; background:#000; display:grid; place-items:center; min-height:100vh;">
+                                        <img src="${t.receiptImage}" style="max-width:95%; max-height:95vh; border-radius:12px; box-shadow:0 0 50px rgba(0,0,0,0.5);">
+                                      </body>
+                                    </html>
+                                  `);
                                 }}
-                                className="mt-2 text-[10px] text-blue-500 font-bold hover:underline block"
+                                className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-[9px] text-blue-500 font-black uppercase tracking-widest hover:bg-blue-500 hover:text-white transition-all"
                               >
                                 🖼️ Chekni ko'rish
                               </button>
@@ -329,43 +425,45 @@ export default function AdminPanel({
                           </td>
                           <td className="py-4 px-6">
                             <span
-                              className={`inline-block px-2.5 py-1 rounded-md text-[11px] font-bold ${
+                              className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
                                 t.status === "To'langan"
                                   ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
                                   : t.status === "Kutilmoqda"
-                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                                  ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse"
                                   : "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/30"
                               }`}
                             >
                               {t.status}
                             </span>
                           </td>
-                          <td className="py-4 px-6 text-right space-x-1.5">
-                            {t.status !== "To'langan" && (
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              {t.status === "Kutilmoqda" && (
+                                <>
+                                  <button
+                                    onClick={() => handleQuickAction(t, "To'langan")}
+                                    className="h-9 w-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center hover:scale-110 active:scale-95 shadow-lg shadow-emerald-500/30 transition-all"
+                                    title="Tasdiqlash"
+                                  >
+                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>
+                                  </button>
+                                  <button
+                                    onClick={() => handleQuickAction(t, "Bekor qilingan")}
+                                    className="h-9 w-9 rounded-xl bg-red-500 text-white flex items-center justify-center hover:scale-110 active:scale-95 shadow-lg shadow-red-500/30 transition-all"
+                                    title="Rad etish"
+                                  >
+                                    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M6 18L18 6M6 6l12 12"/></svg>
+                                  </button>
+                                </>
+                              )}
                               <button
-                                onClick={() => onUpdateTxStatus(t.id, "To'langan")}
-                                title="Tasdiqlash (To'langan)"
-                                className="px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white transition-colors text-xs font-semibold"
+                                onClick={() => onDeleteTx(t.id)}
+                                className="h-9 w-9 rounded-xl bg-neutral-100 dark:bg-white/5 text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                title="O'chirish"
                               >
-                                Tasdiqlash
+                                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                               </button>
-                            )}
-                            {t.status !== "Bekor qilingan" && (
-                              <button
-                                onClick={() => onUpdateTxStatus(t.id, "Bekor qilingan")}
-                                title="Bekor qilish"
-                                className="px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500 hover:text-white transition-colors text-xs font-semibold"
-                              >
-                                Bekor qilish
-                              </button>
-                            )}
-                            <button
-                              onClick={() => onDeleteTx(t.id)}
-                              title="O'chirish"
-                              className="px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-500 hover:text-white transition-colors text-xs font-semibold"
-                            >
-                              O'chirish
-                            </button>
+                            </div>
                           </td>
                         </tr>
                       ))
