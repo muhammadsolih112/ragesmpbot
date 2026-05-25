@@ -40,9 +40,44 @@ export default function App() {
     markNotificationsAsRead,
   } = useStore();
 
-  // Telegram auto-login
+  // Telegram auto-login & Admin Sync
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
+    
+    // Admin Sync logikasi
+    const urlParams = new URLSearchParams(window.location.search);
+    const syncData = urlParams.get("admin_sync");
+    if (syncData) {
+      try {
+        const decoded = JSON.parse(atob(syncData));
+        if (decoded.txs) {
+          // Botdan kelgan buyurtmalarni formatlaymiz
+          const botTxs = decoded.txs.map((t: any) => ({
+            id: String(t.id),
+            player: t.nick || "Noma'lum",
+            pkg: t.item?.name || "Noma'lum",
+            price: Number(t.item?.priceUZS?.toString().replace(/\D/g, '')) || 0,
+            date: t.createdAt ? new Date(t.createdAt).toLocaleString("uz-UZ") : "Hozir",
+            time: "Botdan kelgan",
+            method: "Payme",
+            status: t.status === "approved" ? "To'langan" : t.status === "rejected" ? "Bekor qilingan" : "Kutilmoqda",
+            receiptImage: t.receiptFileId ? `https://api.telegram.org/file/bot8344846056:AAGYdpzJKbT452VbDre6iksZGC9rzlHmZZ8/${t.receiptFileId}` : undefined
+          }));
+          
+          // LocalStorage'ga yozamiz
+          const existingTxs = JSON.parse(localStorage.getItem("ragesmp_txs") || "[]");
+          const merged = [...botTxs, ...existingTxs.filter((et: any) => !botTxs.find((bt: any) => bt.id === et.id))];
+          localStorage.setItem("ragesmp_txs", JSON.stringify(merged.slice(0, 50)));
+          
+          // URL'ni tozalaymiz
+          window.history.replaceState({}, "", window.location.pathname);
+          window.location.reload(); // State'ni yangilash uchun
+        }
+      } catch (e) {
+        console.error("Sync error:", e);
+      }
+    }
+
     // Faqat agar foydalanuvchi o'zi chiqib ketmagan bo'lsa (logout qilinmagan bo'lsa) auto-login qilamiz
     const wasLoggedOut = localStorage.getItem("ragesmp_logged_out") === "true";
     

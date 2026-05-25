@@ -108,7 +108,7 @@ export default function PurchaseModal({
         };
         formData.append("reply_markup", JSON.stringify(replyMarkup));
 
-        await fetch(`https://api.telegram.org/bot8344846056:AAEPxos-P4229tCUJ_MO_PgfH4mSEN6i7OU/sendPhoto`, {
+        await fetch(`https://api.telegram.org/bot8344846056:AAGYdpzJKbT452VbDre6iksZGC9rzlHmZZ8/sendPhoto`, {
           method: "POST",
           body: formData,
         });

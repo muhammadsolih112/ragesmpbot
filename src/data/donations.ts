@@ -98,19 +98,19 @@ export const services: Donation[] = [
 
 export const currencies: Donation[] = [
   {
-    id: "points_10k",
-    name: "10.000 Point",
-    price: 12000, // 1500 * 10 - 3000 discount = 12000
+    id: "points_1k",
+    name: "1.000 Point",
+    price: 1500,
     color: "from-yellow-400 via-orange-500 to-red-500",
     tagline: "O'yin ichidagi maxsus ochkolar.",
     emoji: "🪙",
-    perks: ["10.000 Point", "Do'kon uchun maxsus valyuta"],
+    perks: ["1.000 Point", "Do'kon uchun maxsus valyuta"],
     commands: ["/points add"],
   },
   {
     id: "shards_1k",
     name: "1.000 Shards",
-    price: 5000,
+    price: 3000,
     color: "from-cyan-400 via-blue-500 to-indigo-600",
     tagline: "Noyob buyumlar uchun kristallar.",
     emoji: "💎",
