@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RagesMP.UZ - Minecraft Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/minecraftia');
+
+        :root {
+            --bg-dark: #0a0a0a;
+            --bg-card: rgba(30, 30, 30, 0.85);
+            --neon-green: #39ff14;
+            --neon-blue: #00f3ff;
+            --mc-gray: #373737;
+            --mc-light-gray: #8b8b8b;
+            --mc-border: #1e1e1e;
+            --text-main: #ffffff;
+            --glow-green: 0 0 15px rgba(57, 255, 20, 0.5);
+            --glow-blue: 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Minecraftia', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Animated Background */
+        .bg-animated {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            overflow: hidden;
+        }
+
+        .bg-block {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: rgba(57, 255, 20, 0.03);
+            border: 1px solid rgba(57, 255, 20, 0.05);
+            animation: moveBlocks 20s linear infinite;
+        }
+
+        @keyframes moveBlocks {
+            from { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            50% { opacity: 0.5; }
+            to { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Header */
+        header {
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            border-bottom: 2px solid var(--mc-gray);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            font-size: 24px;
+            color: var(--neon-green);
+            text-shadow: var(--glow-green);
+            letter-spacing: 2px;
+        }
+
+        .server-status-top {
+            font-size: 10px;
+            margin-top: 5px;
+            color: var(--neon-blue);
+        }
+
+        /* Navigation */
+        nav {
+            display: flex;
+            overflow-x: auto;
+            background: var(--mc-gray);
+            padding: 5px;
+            gap: 5px;
+            scrollbar-width: none;
+            border-bottom: 4px solid #000;
+        }
+
+        nav::-webkit-scrollbar { display: none; }
+
+        .nav-item {
+            padding: 10px 15px;
+            background: var(--mc-light-gray);
+            border: 2px solid #fff;
+            border-right-color: #000;
+            border-bottom-color: #000;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 12px;
+            color: #fff;
+            text-shadow: 2px 2px #000;
+            transition: all 0.1s;
+        }
+
+        .nav-item:active, .nav-item.active {
+            background: var(--mc-gray);
+            border: 2px solid #000;
+            border-right-color: #fff;
+            border-bottom-color: #fff;
+            transform: translateY(2px);
+        }
+
+        .nav-item.active {
+            color: var(--neon-green);
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            padding-bottom: 100px;
+        }
+
+        .page { display: none; animation: fadeIn 0.3s ease-out; }
+        .page.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards - Inventory Style */
+        .mc-card {
+            background: var(--bg-card);
+            border: 4px solid var(--mc-gray);
+            border-top-color: var(--mc-light-gray);
+            border-left-color: var(--mc-light-gray);
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: inset -4px -4px 0px #000, 5px 5px 15px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .mc-card h2 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: var(--neon-blue);
+            text-shadow: var(--glow-blue);
+        }
+
+        /* Buttons */
+        .mc-btn {
+            display: inline-block;
+            padding: 12px 20px;
+            background: var(--mc-light-gray);
+            border: 3px solid #fff;
+            border-right-color: #000;
+            border-bottom-color: #000;
+            color: white;
+            text-shadow: 2px 2px #000;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            margin: 5px 0;
+            width: 100%;
+            font-size: 12px;
+            transition: all 0.1s;
+        }
+
+        .mc-btn:active {
+            border: 3px solid #000;
+            border-right-color: #fff;
+            border-bottom-color: #fff;
+            transform: translateY(2px);
+        }
+
+        .mc-btn-primary { background: #55ff55; color: #000; text-shadow: none; border-color: #fff #000 #000 #fff; }
+        .mc-btn-primary:active { background: #33cc33; }
+
+        /* Shop Grid */
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .shop-item {
+            text-align: center;
+        }
+
+        .item-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 10px;
+            image-rendering: pixelated;
+        }
+
+        /* Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            color: var(--neon-green);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+
+        .progress-bar {
+            width: 200px;
+            height: 20px;
+            border: 2px solid var(--mc-light-gray);
+            padding: 2px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--neon-green);
+            width: 0%;
+            transition: width 0.5s;
+        }
+
+        /* Stats List */
+        .stats-list { list-style: none; }
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--mc-gray);
+            font-size: 11px;
+        }
+        .stats-value { color: var(--neon-green); }
+
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="progress-bar"><div class="progress-fill" id="fill"></div></div>
+        <div class="loading-text">YUKLANMOQDA...</div>
+    </div>
+
+    <div class="bg-animated" id="bg-canvas"></div>
+
+    <header>
+        <div class="logo">RAGESMP.UZ</div>
+        <div class="server-status-top">
+            <i class="fas fa-circle" style="font-size: 8px; color: var(--neon-green);"></i> 
+            ONLINE: <span id="online-count">128</span>/500
+        </div>
+    </header>
+
+    <nav id="main-nav">
+        <div class="nav-item active" data-page="home">HOME</div>
+        <div class="nav-item" data-page="shop">SHOP</div>
+        <div class="nav-item" data-page="status">STATUS</div>
+        <div class="nav-item" data-page="donate">DONATE</div>
+        <div class="nav-item" data-page="profile">PROFILE</div>
+        <div class="nav-item" data-page="players">PLAYERS</div>
+    </nav>
+
+    <main>
+        <!-- Home Page -->
+        <div id="home" class="page active">
+            <div class="mc-card">
+                <h2>XUSH KELIBSIZ!</h2>
+                <p style="font-size: 11px; line-height: 1.6;">RageSMP dunyosiga xush kelibsiz. Eng yaxshi Minecraft tajribasi shu yerda!</p>
+                <button class="mc-btn mc-btn-primary" style="margin-top: 15px;" onclick="switchPage('shop')">HOZIR XARID QILISH</button>
+            </div>
+            <div class="mc-card">
+                <h2>YANGILIKLAR</h2>
+                <div class="stats-item"><span>Yangi Rank: TITAN</span> <span class="stats-value">NEW</span></div>
+                <div class="stats-item"><span>Server 1.20.1 ga o'tdi</span> <span class="stats-value">UPD</span></div>
+            </div>
+        </div>
+
+        <!-- Shop Page -->
+        <div id="shop" class="page">
+            <div class="mc-card">
+                <h2>DONATE DO'KON</h2>
+                <div class="shop-grid">
+                    <div class="shop-item mc-card" style="margin-bottom:0">
+                        <img src="https://minecraft.wiki/images/Diamond_JE3_BE3.png" class="item-icon" alt="rank">
+                        <div style="font-size: 10px;">VIP RANK</div>
+                        <div style="color: var(--neon-green); font-size: 10px;">15,000 UZS</div>
+                        <button class="mc-btn" onclick="buyItem('VIP')">SOTIB OLISH</button>
+                    </div>
+                    <div class="shop-item mc-card" style="margin-bottom:0">
+                        <img src="https://minecraft.wiki/images/Netherite_Ingot_JE2_BE2.png" class="item-icon" alt="rank">
+                        <div style="font-size: 10px;">ELITE RANK</div>
+                        <div style="color: var(--neon-green); font-size: 10px;">45,000 UZS</div>
+                        <button class="mc-btn" onclick="buyItem('ELITE')">SOTIB OLISH</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Page -->
+        <div id="status" class="page">
+            <div class="mc-card">
+                <h2>SERVER STATUS</h2>
+                <div class="stats-list">
+                    <div class="stats-item"><span>IP MANZIL:</span> <span class="stats-value">play.ragesmp.uz</span></div>
+                    <div class="stats-item"><span>VERSIYA:</span> <span class="stats-value">1.16.5 - 1.20.x</span></div>
+                    <div class="stats-item"><span>PING:</span> <span class="stats-value">24ms</span></div>
+                    <div class="stats-item"><span>UPTIME:</span> <span class="stats-value">99.9%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Donate Page -->
+        <div id="donate" class="page">
+            <div class="mc-card">
+                <h2>TO'LOV QILISH</h2>
+                <p style="font-size: 10px; margin-bottom: 15px;">Balansni to'ldirish uchun karta ma'lumotlari:</p>
+                <div class="mc-card" style="background: rgba(0,0,0,0.3); border-color: var(--mc-gray);">
+                    <div style="font-size: 10px; color: var(--mc-light-gray);">KARTA RAQAMI:</div>
+                    <div style="font-size: 14px; color: var(--neon-blue);">9860 1201 6372 1422</div>
+                    <div style="font-size: 10px; margin-top: 10px; color: var(--mc-light-gray);">EGA:</div>
+                    <div style="font-size: 12px;">ASILBEK BURHONOV</div>
+                </div>
+                <button class="mc-btn mc-btn-primary" onclick="tg.openLink('https://t.me/copyrage_bot')">ADMIN BILAN BOG'LANISH</button>
+            </div>
+        </div>
+
+        <!-- Profile Page -->
+        <div id="profile" class="page">
+            <div class="mc-card">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <img id="user-photo" src="https://minecraft.wiki/images/Steve_JE2_BE1.png" style="width: 64px; height: 64px; border: 3px solid var(--neon-green); image-rendering: pixelated;">
+                    <div>
+                        <div id="user-name" style="font-size: 14px;">STEVE</div>
+                        <div style="font-size: 10px; color: var(--neon-green);">DARAXT KESUVCHI</div>
+                    </div>
+                </div>
+                <div class="stats-list">
+                    <div class="stats-item"><span>BALANS:</span> <span class="stats-value">5,000 Points</span></div>
+                    <div class="stats-item"><span>LEVEL:</span> <span class="stats-value">12</span></div>
+                    <div class="stats-item"><span>KILLS:</span> <span class="stats-value">1,402</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Players Page -->
+        <div id="players" class="page">
+            <div class="mc-card">
+                <h2>ONLAYN O'YINCHILAR</h2>
+                <div id="player-list" class="stats-list">
+                    <!-- Dinamik qo'shiladi -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+        tg.headerColor = '#0a0a0a';
+
+        // Background Blocks
+        const bg = document.getElementById('bg-canvas');
+        for (let i = 0; i < 20; i++) {
+            const block = document.createElement('div');
+            block.className = 'bg-block';
+            block.style.left = Math.random() * 100 + '%';
+            block.style.top = Math.random() * 100 + '%';
+            block.style.animationDelay = Math.random() * 20 + 's';
+            block.style.width = block.style.height = (Math.random() * 30 + 10) + 'px';
+            bg.appendChild(block);
+        }
+
+        // Navigation Logic
+        const navItems = document.querySelectorAll('.nav-item');
+        const pages = document.querySelectorAll('.page');
+
+        function switchPage(pageId) {
+            pages.forEach(p => p.classList.remove('active'));
+            navItems.forEach(n => n.classList.remove('active'));
+            
+            const targetPage = document.getElementById(pageId);
+            const targetNav = document.querySelector(`[data-page="${pageId}"]`);
+            
+            if(targetPage) targetPage.classList.add('active');
+            if(targetNav) targetNav.classList.add('active');
+
+            // Telegram Haptic Feedback
+            if(tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                switchPage(item.getAttribute('data-page'));
+            });
+        });
+
+        // Loading Animation
+        let progress = 0;
+        const fill = document.getElementById('fill');
+        const loader = document.getElementById('loading-screen');
+
+        const loadInterval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(loadInterval);
+                setTimeout(() => {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }, 500);
+            }
+            fill.style.width = progress + '%';
+        }, 200);
+
+        // Telegram User Info
+        if(tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            document.getElementById('user-name').innerText = tg.initDataUnsafe.user.first_name.toUpperCase();
+            if(tg.initDataUnsafe.user.photo_url) {
+                document.getElementById('user-photo').src = tg.initDataUnsafe.user.photo_url;
+            }
+        }
+
+        // Mock Player List
+        const players = ['Asilbek', 'Vebuca', 'Shadow', 'ProGamer', 'KillerUZ', 'Admin'];
+        const list = document.getElementById('player-list');
+        players.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'stats-item';
+            item.innerHTML = `<span>${p}</span> <span class="stats-value">ONLINE</span>`;
+            list.appendChild(item);
+        });
+
+        function buyItem(name) {
+            tg.showConfirm(`Haqiqatan ham ${name} sotib olmoqchimisiz?`, (ok) => {
+                if(ok) {
+                    tg.showAlert("To'lovni amalga oshirish uchun admin bilan bog'laning!");
+                }
+            });
+        }
+
+        // Real-time counter simulation
+        setInterval(() => {
+            const count = Math.floor(Math.random() * 50) + 100;
+            document.getElementById('online-count').innerText = count;
+        }, 5000);
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,400 @@
+{
+  "config": {
+    "points": {
+      "basePerThousandUZS": 1500,
+      "discountPerTenThousandUZS": 3000
+    },
+    "shards": {
+      "basePerThousandUZS": 5000,
+      "discountPerTenThousandUZS": 5000
+    },
+    "ranks": [
+      {
+        "id": "ragepro",
+        "name": "RagePro",
+        "priceUZS": 10000
+      },
+      {
+        "id": "rageplus",
+        "name": "Rage+",
+        "priceUZS": 30000,
+        "tag": "MASHHUR"
+      },
+      {
+        "id": "elite",
+        "name": "SMP Elite",
+        "priceUZS": 50000,
+        "tag": "VIP"
+      }
+    ],
+    "cases": [
+      {
+        "id": "ordinary",
+        "name": "Oddiy keys",
+        "priceUZS": 5000
+      },
+      {
+        "id": "prime",
+        "name": "Prime keys",
+        "priceUZS": 10000
+      },
+      {
+        "id": "crimson",
+        "name": "Crimson keys",
+        "priceUZS": 15000
+      },
+      {
+        "id": "gold",
+        "name": "Oltin keys",
+        "priceUZS": 20000
+      },
+      {
+        "id": "amethyst",
+        "name": "Ametist keys",
+        "priceUZS": 30000
+      }
+    ],
+    "services": [
+      {
+        "id": "unban",
+        "name": "Unban",
+        "priceUZS": 15000
+      },
+      {
+        "id": "unmute",
+        "name": "Unmute",
+        "priceUZS": 5000
+      }
+    ],
+    "moderation": {
+      "blockStickers": true,
+      "blockEmoji": true,
+      "floodProtection": true,
+      "floodLimit": 3,
+      "floodWindowMs": 7000
+    }
+  },
+  "users": {
+    "1460659473": {
+      "lastBotMessageId": 1190
+    },
+    "1763315353": {
+      "lastBotMessageId": 1175
+    },
+    "1977379033": {
+      "lastBotMessageId": 1285,
+      "nick": "vebuca",
+      "agreed": true
+    },
+    "-1003848105340": {
+      "lastBotMessageId": 65
+    },
+    "8760581803": {
+      "lastBotMessageId": 1279,
+      "nick": "Defect_x",
+      "agreed": true
+    },
+    "6038197038": {
+      "lastBotMessageId": 989,
+      "nick": "deploy11",
+      "agreed": true
+    },
+    "7541596469": {
+      "lastBotMessageId": 1037,
+      "nick": "Lisdow_",
+      "agreed": true
+    },
+    "7314898731": {
+      "lastBotMessageId": 1039
+    },
+    "8636398380": {
+      "lastBotMessageId": 1226
+    },
+    "6749142475": {
+      "lastBotMessageId": 1144
+    },
+    "6107688749": {
+      "lastBotMessageId": 1145
+    },
+    "7316965740": {
+      "lastBotMessageId": 1146
+    },
+    "7408670325": {
+      "lastBotMessageId": 1178
+    }
+  },
+  "sessions": {
+    "1763315353": {
+      "step": "await_nick"
+    },
+    "1977379033": {
+      "step": "await_receipt",
+      "orderId": 1779702835719
+    },
+    "6038197038": {
+      "step": "await_amount",
+      "kind": "points"
+    }
+  },
+  "admins": {},
+  "orders": [
+    {
+      "userId": "8760581803",
+      "item": {
+        "name": "1 Point",
+        "priceUZS": "1 500 so'm"
+      },
+      "id": "TX-5675",
+      "nick": "defect_x",
+      "createdAt": "2026-05-25T09:56:26.665Z",
+      "status": "approved"
+    },
+    {
+      "id": 1779702835719,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "Rage+",
+        "priceUZS": 30000
+      },
+      "createdAt": "2026-05-25T09:53:55.719Z",
+      "status": "new"
+    },
+    {
+      "id": 1779652841989,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "5.995 Point",
+        "amountLabel": "5.995 ta",
+        "priceUZS": 8992.5
+      },
+      "createdAt": "2026-05-24T20:00:41.990Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIE3moTWO5z-WRYhrBG-xo_JmmjHvY9AAKgHmsbbE2YSDZP4Qw0kNSeAQADAgADeQADOwQ",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-24T20:00:50.096Z"
+    },
+    {
+      "id": 1779651548915,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "SMP Elite",
+        "priceUZS": 50000
+      },
+      "createdAt": "2026-05-24T19:39:08.915Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIE0moTU98AAY54CWSpP1fX7gz6_rpZnwACeRhrG268oUhYKB17bkclewEAAwIAA3kAAzsE",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-24T19:43:20.032Z"
+    },
+    {
+      "id": 1779649209339,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "SMP Elite",
+        "priceUZS": 50000
+      },
+      "createdAt": "2026-05-24T19:00:09.339Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIEtmoTSsfiZiSbb5jZbAGGkRwI-hmpAAI1HmsbbE2YSAJb4SWR4HkLAQADAgADeQADOwQ",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-24T19:00:32.844Z"
+    },
+    {
+      "id": 1779632694367,
+      "userId": "1977379033",
+      "nick": "45345345",
+      "item": {
+        "name": "SMP Elite",
+        "priceUZS": 50000
+      },
+      "createdAt": "2026-05-24T14:24:54.367Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIEj2oTCkhELL1Nnyuc3QABBmbt29LNAwACmBxrG2xNmEi1ZiOy_KkyRAEAAwIAA3kAAzsE",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-24T14:25:20.623Z"
+    },
+    {
+      "id": 1779548549994,
+      "userId": "1977379033",
+      "nick": "45345345",
+      "item": {
+        "name": "5.656 Point",
+        "amountLabel": "5.656 ta",
+        "priceUZS": 8484
+      },
+      "createdAt": "2026-05-23T15:02:29.994Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIEGWoRwUmNrQMBwmL2skbJNEfYNVBjAALYHWsbRi6RSNVGmFA1DoWhAQADAgADbQADOwQ",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-23T15:02:39.474Z"
+    },
+    {
+      "id": 1779538150559,
+      "userId": "6038197038",
+      "nick": "deploy11",
+      "item": {
+        "name": "RagePro",
+        "priceUZS": 10000
+      },
+      "createdAt": "2026-05-23T12:09:10.559Z",
+      "status": "new"
+    },
+    {
+      "id": 1779537040182,
+      "userId": "8760581803",
+      "nick": "Defect_x",
+      "item": {
+        "name": "5.000 Shards",
+        "amountLabel": "5.000 ta",
+        "priceUZS": 25000
+      },
+      "createdAt": "2026-05-23T11:50:40.182Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIDzGoRlKmhCQldP20UL98mTEXKNGHgAAK1Gmsbx_aJSImJhPYfAAGscAEAAwIAA3gAAzsE",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-23T12:52:42.691Z"
+    },
+    {
+      "id": 1779486985009,
+      "userId": "1977379033",
+      "nick": "45345345",
+      "item": {
+        "name": "Rage+",
+        "priceUZS": 30000
+      },
+      "createdAt": "2026-05-22T21:56:25.009Z",
+      "status": "new"
+    },
+    {
+      "id": 1779486023921,
+      "userId": "1977379033",
+      "nick": "45345345",
+      "item": {
+        "name": "Crimson keys",
+        "priceUZS": 15000
+      },
+      "createdAt": "2026-05-22T21:40:23.921Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAICOmoQwprLXon0aZ3WPHi3viyd7ek9AAJ4HGsbRi6JSIlm_JOSCnqxAQADAgADbQADOwQ",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-22T21:40:29.706Z"
+    },
+    {
+      "id": 1779486006929,
+      "userId": "1977379033",
+      "nick": "45345345",
+      "item": {
+        "name": "RagePro",
+        "priceUZS": 10000
+      },
+      "createdAt": "2026-05-22T21:40:06.929Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAICOmoQwprLXon0aZ3WPHi3viyd7ek9AAJ4HGsbRi6JSIlm_JOSCnqxAQADAgADbQADOwQ",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-22T21:40:13.049Z"
+    },
+    {
+      "id": 1779484114398,
+      "userId": "1977379033",
+      "nick": "45345345",
+      "item": {
+        "name": "SMP Elite",
+        "priceUZS": 50000
+      },
+      "createdAt": "2026-05-22T21:08:34.398Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAICOmoQwprLXon0aZ3WPHi3viyd7ek9AAJ4HGsbRi6JSIlm_JOSCnqxAQADAgADbQADOwQ",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-22T21:08:45.761Z"
+    },
+    {
+      "id": 1779484093207,
+      "userId": "1977379033",
+      "nick": "45345345",
+      "item": {
+        "name": "45.232 Point",
+        "amountLabel": "45.232 ta",
+        "priceUZS": 55848
+      },
+      "createdAt": "2026-05-22T21:08:13.207Z",
+      "status": "rejected",
+      "receiptFileId": "AgACAgIAAxkBAAICOmoQwprLXon0aZ3WPHi3viyd7ek9AAJ4HGsbRi6JSIlm_JOSCnqxAQADAgADbQADOwQ",
+      "checkedBy": "1977379033",
+      "checkedAt": "2026-05-22T21:08:26.229Z"
+    }
+  ],
+  "supportMap": {
+    "9": {
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "15": {
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "18": {
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "21": {
+      "userId": "8760581803",
+      "chatId": 8760581803
+    }
+  },
+  "receiptMap": {
+    "3": {
+      "orderId": 1779484093207,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "5": {
+      "orderId": 1779484114398,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "7": {
+      "orderId": 1779486006929,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "9": {
+      "orderId": 1779486023921,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "15": {
+      "orderId": 1779537040182,
+      "userId": "8760581803",
+      "chatId": 8760581803
+    },
+    "19": {
+      "orderId": 1779548549994,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "21": {
+      "orderId": 1779632694367,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "23": {
+      "orderId": 1779649209339,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "32": {
+      "orderId": 1779651548915,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "46": {
+      "orderId": 1779652841989,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    }
+  }
+}
