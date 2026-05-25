@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 
+export type TxType = "purchase" | "balance_purchase" | "topup";
+
 export type Transaction = {
   id: string;
   player: string;
@@ -7,10 +9,13 @@ export type Transaction = {
   price: number;
   time: string;
   date: string;
-  method: "Click" | "Payme" | "Uzcard" | "Humo";
+  method: "Click" | "Payme" | "Uzcard" | "Humo" | "Balance";
   status: "To'langan" | "Kutilmoqda" | "Bekor qilingan";
-  receiptImage?: string; // Base64 encoded image
+  type?: TxType; // "purchase" (default), "balance_purchase" (balansdan), "topup" (balans to'ldirish)
+  receiptImage?: string; // Base64 encoded image yoki URL
+  receiptFileId?: string; // Telegram file_id (botdan kelgan rasm uchun)
   telegramId?: string; // Telegram user ID for notifications
+  source?: "site" | "bot"; // Qaerdan kelganligini bilish uchun
   deletedAt?: string;
   deletedAtLabel?: string;
   previousStatus?: Transaction["status"];
@@ -23,6 +28,16 @@ export type Notification = {
   read: boolean;
 };
 
+export type MediaRequest = {
+  id: string;
+  player: string;
+  screenshots: string[];
+  telegramUsername: string;
+  status: "Kutilmoqda" | "Tasdiqlangan" | "Bekor qilingan";
+  date: string;
+  time: string;
+};
+
 export type User = {
   nick: string;
   pass: string;
@@ -30,6 +45,7 @@ export type User = {
   regDate: string;
   rank: string;
   spent: number;
+  balance: number; // Foydalanuvchi balansi (so'mda)
   points: number;
   shards: number;
   notifications: Notification[];
@@ -70,15 +86,15 @@ const pruneTrash = <T extends { deletedAt?: string }>(items: T[]) => {
 };
 
 const INITIAL_USERS: User[] = [
-  { nick: "vebuca", pass: "vebuca101uz", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000, points: 1000, shards: 1000, notifications: [] },
-  { nick: "vebuca1", pass: "vebucaadmin", role: "admin", regDate: "2026-05-25", rank: "SMP Elite", spent: 0, points: 1000, shards: 1000, notifications: [] },
-  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000, points: 1000, shards: 1000, notifications: [] },
-  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000, points: 2000, shards: 1000, notifications: [] },
-  { nick: "ToshkentBoy", pass: "pass123", role: "user", regDate: "2026-01-18", rank: "Rage+", spent: 150000, points: 0, shards: 0, notifications: [] },
-  { nick: "AzizbekMC", pass: "pass123", role: "user", regDate: "2026-01-20", rank: "Rage+", spent: 120000, points: 500, shards: 0, notifications: [] },
-  { nick: "NightCraft", pass: "pass123", role: "user", regDate: "2026-01-22", rank: "Rage+", spent: 90000, points: 0, shards: 100, notifications: [] },
-  { nick: "OlimjonUZ", pass: "pass123", role: "user", regDate: "2026-01-25", rank: "RagePro", spent: 10000, points: 0, shards: 0, notifications: [] },
-  { nick: "DonerKing", pass: "pass123", role: "user", regDate: "2026-01-28", rank: "RagePro", spent: 10000, points: 0, shards: 0, notifications: [] },
+  { nick: "vebuca", pass: "vebuca88888880", role: "admin", regDate: "2026-01-10", rank: "SMP Elite", spent: 500000, balance: 0, points: 1000, shards: 1000, notifications: [] },
+  { nick: "vebuca1", pass: "vebucaadmin", role: "admin", regDate: "2026-05-25", rank: "SMP Elite", spent: 0, balance: 0, points: 1000, shards: 1000, notifications: [] },
+  { nick: "ShohruhPro", pass: "pass123", role: "user", regDate: "2026-01-12", rank: "SMP Elite", spent: 250000, balance: 0, points: 1000, shards: 1000, notifications: [] },
+  { nick: "RageHunter", pass: "pass123", role: "user", regDate: "2026-01-15", rank: "SMP Elite", spent: 190000, balance: 0, points: 2000, shards: 1000, notifications: [] },
+  { nick: "ToshkentBoy", pass: "pass123", role: "user", regDate: "2026-01-18", rank: "Rage+", spent: 150000, balance: 0, points: 0, shards: 0, notifications: [] },
+  { nick: "AzizbekMC", pass: "pass123", role: "user", regDate: "2026-01-20", rank: "Rage+", spent: 120000, balance: 0, points: 500, shards: 0, notifications: [] },
+  { nick: "NightCraft", pass: "pass123", role: "user", regDate: "2026-01-22", rank: "Rage+", spent: 90000, balance: 0, points: 0, shards: 100, notifications: [] },
+  { nick: "OlimjonUZ", pass: "pass123", role: "user", regDate: "2026-01-25", rank: "RagePro", spent: 10000, balance: 0, points: 0, shards: 0, notifications: [] },
+  { nick: "DonerKing", pass: "pass123", role: "user", regDate: "2026-01-28", rank: "RagePro", spent: 10000, balance: 0, points: 0, shards: 0, notifications: [] },
 ];
 
 const INITIAL_TXS: Transaction[] = [
@@ -98,15 +114,16 @@ export function useStore() {
   const [users, setUsers] = useState<User[]>(() => {
     const s = localStorage.getItem("ragesmp_users");
     if (s) {
-      try { 
+      try {
         const parsed = JSON.parse(s);
-        const items = parsed.map((u: any) => ({ 
-          ...u, 
+        const items = parsed.map((u: any) => ({
+          ...u,
           points: u.points || 0,
           shards: u.shards || 0,
-          notifications: u.notifications || [] 
+          balance: Number(u.balance) || 0,
+          notifications: u.notifications || []
         }));
-        return migrateUsers(pruneTrash(items)); 
+        return migrateUsers(pruneTrash(items));
       } catch {}
     }
     localStorage.setItem("ragesmp_users", JSON.stringify(INITIAL_USERS));
@@ -120,6 +137,15 @@ export function useStore() {
     }
     localStorage.setItem("ragesmp_txs", JSON.stringify(INITIAL_TXS));
     return INITIAL_TXS;
+  });
+
+  const [mediaRequests, setMediaRequests] = useState<MediaRequest[]>(() => {
+    const s = localStorage.getItem("ragesmp_media_requests");
+    if (s) {
+      try { return JSON.parse(s); } catch {}
+    }
+    localStorage.setItem("ragesmp_media_requests", JSON.stringify([]));
+    return [];
   });
 
   const [currentUser, setCurrentUser] = useState<User | null>(() => {
@@ -153,6 +179,14 @@ export function useStore() {
       }
     }
   }, [txs]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("ragesmp_media_requests", JSON.stringify(mediaRequests));
+    } catch (e) {
+      console.error("LocalStorage save error (media requests):", e);
+    }
+  }, [mediaRequests]);
 
   useEffect(() => {
     if (currentUser) {
@@ -194,6 +228,7 @@ export function useStore() {
       regDate: new Date().toISOString().split("T")[0],
       rank: "Oddiy",
       spent: 0,
+      balance: 0,
       points: 1.000,
       shards: 1.000,
       notifications: [],
@@ -209,9 +244,9 @@ export function useStore() {
     setCurrentUser(null);
   };
 
-  const addTransaction = (player: string, pkgName: string, price: number, method: Transaction["method"], receiptImage?: string) => {
+  const addTransaction = async (player: string, pkgName: string, price: number, method: Transaction["method"], receiptImage?: string) => {
     const newTx: Transaction = {
-      id: `TX-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: String(Date.now()),
       player,
       pkg: pkgName,
       price,
@@ -220,73 +255,298 @@ export function useStore() {
       method,
       status: "Kutilmoqda",
       receiptImage,
+      source: "site",
     };
     setTxs([newTx, ...txs]);
+
+    // Try to send the transaction to bot API
+    try {
+      let botApiUrl = "";
+      try {
+        const siteConfigRaw = localStorage.getItem("ragesmp_site_config");
+        if (siteConfigRaw) {
+          const siteConfig = JSON.parse(siteConfigRaw);
+          botApiUrl = siteConfig.links?.botApiUrl || "";
+        }
+      } catch {}
+
+      if (botApiUrl) {
+        const baseUrl = botApiUrl.replace(/\/api\/orders.*$/, "");
+        const tgUser = (window as any).Telegram?.WebApp?.initDataUnsafe?.user;
+        
+        await fetch(`${baseUrl}/api/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            player,
+            pkg: pkgName,
+            price,
+            method,
+            receiptImage,
+            telegramId: tgUser?.id,
+            telegramUsername: tgUser?.username ? `@${tgUser.username}` : tgUser?.first_name
+          })
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send transaction to bot:", err);
+    }
   };
 
-  const updateTxStatus = (id: string, status: Transaction["status"]) => {
-    setTxs((prev) =>
-      prev.map((t) => {
-        if (t.id === id) {
-          if (status === "To'langan" && t.status !== "To'langan") {
-            const newNotif: Notification = {
-              id: Math.random().toString(36).substr(2, 9),
-              text: `✅ Chekingiz tasdiqlandi! ${t.pkg} xaridi faollashtirildi.`,
-              time: nowLabel(),
-              read: false,
-            };
+  const applyApproval = (t: Transaction) => {
+    const type = t.type || "purchase";
+    const isTopup = type === "topup";
+    const isBalancePurchase = type === "balance_purchase";
 
-            setUsers((usrs) =>
-              usrs.map((u) => {
-                if (u.nick.toLowerCase() === t.player.toLowerCase()) {
-                  let updatedUser = { 
-                    ...u, 
-                    spent: u.spent + t.price, 
-                    notifications: [newNotif, ...u.notifications]
-                  };
+    const text = isTopup
+      ? `💰 Balansingiz tasdiqlandi: +${t.price.toLocaleString()} so'm hisobingizga qo'shildi.`
+      : isBalancePurchase
+      ? `✅ Donatingiz muvaffaqiyatli sotib olindi! Endi o'yinga kirib chiqib tekshirib olishingiz mumkin. Xarid: ${t.pkg}`
+      : `✅ Chekingiz tasdiqlandi! ${t.pkg} xaridi faollashtirildi.`;
 
-                  // Point yoki Shard bo'lsa balansni yangilaymiz
-                  if (t.pkg.toLowerCase().includes("point")) {
-                    const amount = parseInt(t.pkg.replace(/\D/g, '')) || 0;
-                    updatedUser.points += amount;
-                  } else if (t.pkg.toLowerCase().includes("shard")) {
-                    const amount = parseInt(t.pkg.replace(/\D/g, '')) || 0;
-                    updatedUser.shards += amount;
-                  } else {
-                    // Rank bo'lsa rankni yangilaymiz
-                    updatedUser.rank = t.pkg;
-                  }
-                  
-                  return updatedUser;
-                }
-                return u;
-              })
-            );
+    const newNotif: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      text,
+      time: nowLabel(),
+      read: false,
+    };
 
-            if (currentUser && currentUser.nick.toLowerCase() === t.player.toLowerCase()) {
-              setCurrentUser((prev) => {
-                if (!prev) return null;
-                let updated = {
-                  ...prev,
-                  spent: prev.spent + t.price,
-                  notifications: [newNotif, ...prev.notifications]
-                };
-                if (t.pkg.toLowerCase().includes("point")) {
-                  updated.points += parseInt(t.pkg.replace(/\D/g, '')) || 0;
-                } else if (t.pkg.toLowerCase().includes("shard")) {
-                  updated.shards += parseInt(t.pkg.replace(/\D/g, '')) || 0;
-                } else {
-                  updated.rank = t.pkg;
-                }
-                return updated;
-              });
-            }
-          }
-          return { ...t, status };
+    const patchUser = (u: User): User => {
+      if (u.nick.toLowerCase() !== t.player.toLowerCase()) return u;
+      let updated: User = { ...u, notifications: [newNotif, ...u.notifications] };
+
+      if (isTopup) {
+        // Balans to'ldirish
+        updated.balance = (updated.balance || 0) + t.price;
+      } else {
+        // Xarid (oddiy yoki balansdan) — spent + rank/points/shards
+        updated.spent = (updated.spent || 0) + t.price;
+        if (t.pkg.toLowerCase().includes("point")) {
+          const amount = parseInt(t.pkg.replace(/\D/g, "")) || 0;
+          updated.points += amount;
+        } else if (t.pkg.toLowerCase().includes("shard")) {
+          const amount = parseInt(t.pkg.replace(/\D/g, "")) || 0;
+          updated.shards += amount;
+        } else if (!isBalancePurchase || t.pkg) {
+          // Rank xaridi
+          updated.rank = t.pkg;
         }
-        return t;
-      })
-    );
+      }
+      return updated;
+    };
+
+    setUsers((usrs) => usrs.map(patchUser));
+    if (currentUser && currentUser.nick.toLowerCase() === t.player.toLowerCase()) {
+      setCurrentUser((prev) => (prev ? patchUser(prev) : prev));
+    }
+  };
+
+  const applyRejection = (t: Transaction) => {
+    const type = t.type || "purchase";
+    const isBalancePurchase = type === "balance_purchase";
+
+    const text = type === "topup"
+      ? `❌ Balansni to'ldirish so'rovingiz bekor qilindi. Iltimos, admin bilan bog'laning.`
+      : isBalancePurchase
+      ? `❌ Xaridingiz bekor qilindi. Balansingiz qaytarildi (+${t.price.toLocaleString()} so'm).`
+      : `❌ Chekingiz bekor qilindi. Iltimos, qaytadan urinib ko'ring.`;
+
+    const newNotif: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      text,
+      time: nowLabel(),
+      read: false,
+    };
+
+    const patchUser = (u: User): User => {
+      if (u.nick.toLowerCase() !== t.player.toLowerCase()) return u;
+      let updated: User = { ...u, notifications: [newNotif, ...u.notifications] };
+
+      if (isBalancePurchase) {
+        // Balansdan xarid bekor qilinsa balansni qaytaramiz
+        updated.balance = (updated.balance || 0) + t.price;
+      }
+      return updated;
+    };
+
+    setUsers((usrs) => usrs.map(patchUser));
+    if (currentUser && currentUser.nick.toLowerCase() === t.player.toLowerCase()) {
+      setCurrentUser((prev) => (prev ? patchUser(prev) : prev));
+    }
+  };
+
+  const updateTxStatus = async (id: string, status: Transaction["status"]) => {
+    // MUHIM: side effect'larni (applyApproval/applyRejection) updater ichida CHAQIRMAYMIZ,
+    // chunki React StrictMode'da updater 2 marta ishlaydi va balans 2x qo'shiladi.
+    const target = txs.find((t) => t.id === id);
+    if (!target) return;
+    const prevStatus = target.status;
+
+    setTxs((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+
+    // If this is a bot-sourced transaction, sync the status to the bot's API
+    if (target.source === "bot" || target.telegramId) {
+      try {
+        // Get bot API URL from localStorage (siteConfig)
+        let botApiUrl = "";
+        try {
+          const siteConfigRaw = localStorage.getItem("ragesmp_site_config");
+          if (siteConfigRaw) {
+            const siteConfig = JSON.parse(siteConfigRaw);
+            botApiUrl = siteConfig.links?.botApiUrl || "";
+          }
+        } catch {}
+
+        if (botApiUrl) {
+          // Extract the base URL (remove /api/orders if present)
+          const baseUrl = botApiUrl.replace(/\/api\/orders.*$/, "");
+          const botStatus = status === "To'langan" ? "approved" : "rejected";
+          
+          await fetch(`${baseUrl}/api/orders/${id}/status`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: botStatus })
+          });
+        }
+      } catch (err) {
+        console.error("Failed to sync status to bot:", err);
+      }
+    }
+
+    if (status === "To'langan" && prevStatus !== "To'langan") {
+      applyApproval(target);
+    } else if (status === "Bekor qilingan" && prevStatus !== "Bekor qilingan") {
+      applyRejection(target);
+    }
+  };
+
+  // Balansdan xarid: balans darhol yechiladi, status = Kutilmoqda
+  const addBalancePurchase = (player: string, pkgName: string, price: number): { success: boolean; msg: string; tx?: Transaction } => {
+    const user = users.find((u) => u.nick.toLowerCase() === player.toLowerCase() && !u.deletedAt);
+    if (!user) return { success: false, msg: "Foydalanuvchi topilmadi." };
+    if ((user.balance || 0) < price) {
+      return { success: false, msg: `Balans yetarli emas. Sizda ${user.balance.toLocaleString()} so'm bor, kerak: ${price.toLocaleString()} so'm.` };
+    }
+
+    const newTx: Transaction = {
+      id: `TX-${Math.floor(1000 + Math.random() * 9000)}`,
+      player,
+      pkg: pkgName,
+      price,
+      time: "Hozirgi xarid",
+      date: new Date().toISOString().replace("T", " ").substring(0, 16),
+      method: "Balance",
+      status: "Kutilmoqda",
+      type: "balance_purchase",
+      source: "site",
+    };
+
+    // Balansdan darhol yechiamiz
+    const patchUser = (u: User): User => {
+      if (u.nick.toLowerCase() !== player.toLowerCase()) return u;
+      return { ...u, balance: (u.balance || 0) - price };
+    };
+    setUsers((usrs) => usrs.map(patchUser));
+    if (currentUser && currentUser.nick.toLowerCase() === player.toLowerCase()) {
+      setCurrentUser((prev) => (prev ? patchUser(prev) : prev));
+    }
+
+    setTxs((prev) => [newTx, ...prev]);
+    return { success: true, msg: "Bajarilmoqda — admin tasdiqlaganidan keyin faollashadi.", tx: newTx };
+  };
+
+  // Balansni to'ldirish so'rovi
+  const addTopupRequest = async (player: string, amount: number, receiptImage?: string): Promise<Transaction> => {
+    const newTx: Transaction = {
+      id: String(Date.now()),
+      player,
+      pkg: `Balans to'ldirish (${amount.toLocaleString()} so'm)`,
+      price: amount,
+      time: "Balans to'ldirish",
+      date: new Date().toISOString().replace("T", " ").substring(0, 16),
+      method: "Payme",
+      status: "Kutilmoqda",
+      type: "topup",
+      source: "site",
+      receiptImage,
+    };
+    setTxs((prev) => [newTx, ...prev]);
+
+    // Try to send the top-up request to bot API
+    try {
+      let botApiUrl = "";
+      try {
+        const siteConfigRaw = localStorage.getItem("ragesmp_site_config");
+        if (siteConfigRaw) {
+          const siteConfig = JSON.parse(siteConfigRaw);
+          botApiUrl = siteConfig.links?.botApiUrl || "";
+        }
+      } catch {}
+
+      if (botApiUrl) {
+        const baseUrl = botApiUrl.replace(/\/api\/orders.*$/, "");
+        const tgUser = (window as any).Telegram?.WebApp?.initDataUnsafe?.user;
+        
+        await fetch(`${baseUrl}/api/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            player,
+            pkg: `Balans to'ldirish (${amount.toLocaleString()} so'm)`,
+            price: amount,
+            method: "Payme",
+            receiptImage,
+            telegramId: tgUser?.id,
+            telegramUsername: tgUser?.username ? `@${tgUser.username}` : tgUser?.first_name
+          })
+        });
+      }
+    } catch (err) {
+      console.error("Failed to send topup to bot:", err);
+    }
+
+    return newTx;
+  };
+
+  // Admin: foydalanuvchi balansini qo'lda boshqarish
+  const adjustUserBalance = (nick: string, delta: number, reason: string = "Admin tomonidan o'zgartirildi") => {
+    const notif: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      text: delta > 0
+        ? `💰 Balansingizga +${delta.toLocaleString()} so'm qo'shildi. ${reason}`
+        : delta < 0
+        ? `📉 Balansingizdan ${Math.abs(delta).toLocaleString()} so'm yechildi. ${reason}`
+        : `🔄 Balansingiz 0 ga tushirildi. ${reason}`,
+      time: nowLabel(),
+      read: false,
+    };
+
+    const patchUser = (u: User): User => {
+      if (u.nick.toLowerCase() !== nick.toLowerCase()) return u;
+      const newBal = Math.max(0, (u.balance || 0) + delta);
+      return { ...u, balance: newBal, notifications: [notif, ...u.notifications] };
+    };
+    setUsers((usrs) => usrs.map(patchUser));
+    if (currentUser && currentUser.nick.toLowerCase() === nick.toLowerCase()) {
+      setCurrentUser((prev) => (prev ? patchUser(prev) : prev));
+    }
+  };
+
+  const setUserBalance = (nick: string, balance: number) => {
+    const notif: Notification = {
+      id: Math.random().toString(36).substr(2, 9),
+      text: `🔄 Balansingiz ${balance.toLocaleString()} so'm ga o'rnatildi (admin tomonidan).`,
+      time: nowLabel(),
+      read: false,
+    };
+    const patchUser = (u: User): User => {
+      if (u.nick.toLowerCase() !== nick.toLowerCase()) return u;
+      return { ...u, balance: Math.max(0, balance), notifications: [notif, ...u.notifications] };
+    };
+    setUsers((usrs) => usrs.map(patchUser));
+    if (currentUser && currentUser.nick.toLowerCase() === nick.toLowerCase()) {
+      setCurrentUser((prev) => (prev ? patchUser(prev) : prev));
+    }
   };
 
   const markNotificationsAsRead = () => {
@@ -355,6 +615,58 @@ export function useStore() {
     setUsers((prev) => prev.filter((u) => u.nick.toLowerCase() !== nick.toLowerCase()));
   };
 
+  const addMediaRequest = (player: string, screenshots: string[], telegramUsername: string): MediaRequest => {
+    const newReq: MediaRequest = {
+      id: String(Date.now()),
+      player,
+      screenshots,
+      telegramUsername,
+      status: "Kutilmoqda",
+      date: new Date().toLocaleString("uz-UZ"),
+      time: "Hozirgi so'rov",
+    };
+    console.log("Adding media request:", newReq);
+    setMediaRequests((prev) => {
+      const updated = [newReq, ...prev];
+      console.log("Updated media requests:", updated);
+      return updated;
+    });
+    return newReq;
+  };
+
+  const updateMediaRequestStatus = (id: string, status: MediaRequest["status"]) => {
+    const target = mediaRequests.find((r) => r.id === id);
+    if (!target) return;
+
+    setMediaRequests((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+
+    // Add notification to user
+    if (target.player) {
+      const newNotif: Notification = {
+        id: Math.random().toString(36).substr(2, 9),
+        text: status === "Tasdiqlangan"
+          ? "🎉 Tabriklaymiz! Siz endi RageSMP serverida Media siz! Media rank faollashtirildi!"
+          : "❌ Media rank so'rovingiz bekor qilindi. Iltimos, admin bilan bog'laning.",
+        time: nowLabel(),
+        read: false,
+      };
+
+      const patchUser = (u: User): User => {
+        if (u.nick.toLowerCase() !== target.player.toLowerCase()) return u;
+        let updated: User = { ...u, notifications: [newNotif, ...u.notifications] };
+        if (status === "Tasdiqlangan") {
+          updated.rank = "Media";
+        }
+        return updated;
+      };
+
+      setUsers((usrs) => usrs.map(patchUser));
+      if (currentUser && currentUser.nick.toLowerCase() === target.player.toLowerCase()) {
+        setCurrentUser((prev) => (prev ? patchUser(prev) : prev));
+      }
+    }
+  };
+
   const activeUsers = users.filter((u) => !u.deletedAt);
   const userTrash = users.filter((u) => u.deletedAt);
   const activeTxs = txs.filter((t) => !t.deletedAt);
@@ -363,6 +675,7 @@ export function useStore() {
   return {
     users: activeUsers,
     txs: activeTxs,
+    mediaRequests,
     userTrash,
     txTrash,
     currentUser,
@@ -370,6 +683,10 @@ export function useStore() {
     register,
     logout,
     addTransaction,
+    addTopupRequest,
+    addBalancePurchase,
+    adjustUserBalance,
+    setUserBalance,
     updateTxStatus,
     deleteTx,
     restoreTx,
@@ -379,5 +696,7 @@ export function useStore() {
     restoreUser,
     permanentDeleteUser,
     markNotificationsAsRead,
+    addMediaRequest,
+    updateMediaRequestStatus,
   };
 }

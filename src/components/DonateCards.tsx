@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { donations, services, currencies, fmtUZS, type Donation } from "../data/donations";
+import { fmtUZS, type Donation } from "../data/donations";
+import { useSiteConfig } from "../data/siteConfig";
+import type { User } from "../data/store";
 
-export default function DonateCards({ onSelect }: { onSelect: (d: Donation) => void }) {
-  const [activeTab, setActiveTab] = useState<"ranks" | "services" | "currencies">("ranks");
+export default function DonateCards({ onSelect, currentUser, onOpenAuth, onOpenMediaModal }: { onSelect: (d: Donation) => void; currentUser: User | null; onOpenAuth: () => void; onOpenMediaModal: () => void }) {
+  const { config } = useSiteConfig();
+  const [activeTab, setActiveTab] = useState<"ranks" | "media" | "services" | "currencies">("ranks");
 
   const getItems = () => {
     switch (activeTab) {
-      case "services": return services;
-      case "currencies": return currencies;
-      default: return donations;
+      case "services": return config.services;
+      case "currencies": return config.currencies;
+      case "media": return [];
+      default: return config.donations;
     }
   };
 
@@ -21,6 +25,7 @@ export default function DonateCards({ onSelect }: { onSelect: (d: Donation) => v
         <div className="mt-8 flex justify-center gap-2 p-1 bg-orange-500/5 rounded-2xl border border-orange-500/10 max-w-md mx-auto">
           {[
             { id: "ranks", label: "👑 Ranklar" },
+            { id: "media", label: "📺 Media" },
             { id: "services", label: "🔓 Xizmatlar" },
             { id: "currencies", label: "💎 Valyuta" },
           ].map((tab) => (
@@ -32,7 +37,9 @@ export default function DonateCards({ onSelect }: { onSelect: (d: Donation) => v
               }}
               className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 activeTab === tab.id
-                  ? "bg-white dark:bg-white/10 text-orange-500 shadow-sm"
+                  ? tab.id === "media"
+                    ? "bg-white dark:bg-white/10 text-red-500 shadow-sm"
+                    : "bg-white dark:bg-white/10 text-orange-500 shadow-sm"
                   : "text-neutral-500 hover:text-orange-400"
               }`}
             >
@@ -41,11 +48,43 @@ export default function DonateCards({ onSelect }: { onSelect: (d: Donation) => v
           ))}
         </div>
 
-        <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {getItems().map((d, i) => (
-            <Card key={d.id} d={d} delay={i * 0.1} onSelect={onSelect} />
-          ))}
-        </div>
+        {activeTab === "media" ? (
+          <div className="mt-10 sm:mt-14 text-center">
+            <div className="rounded-[32px] border-2 border-red-500/30 bg-red-500/5 p-8 sm:p-12 relative overflow-hidden">
+              <div className="absolute -top-10 -right-10 h-40 w-40 bg-gradient-to-br from-red-500/20 to-red-700/10 blur-3xl rounded-full animate-pulse-slow" />
+              <div className="relative z-10">
+                <div className="h-20 w-20 mx-auto rounded-[40px] bg-gradient-to-r from-red-500 via-red-600 to-red-700 text-white text-4xl shadow-xl shadow-red-500/40 mb-4 grid place-items-center">
+                  📺
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-red-600 dark:text-red-400 mb-2">
+                  YouTube va Streamerlar uchun <span className="fire-text">Media Rank</span>
+                </h3>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-lg mx-auto mb-6">
+                  Media rank olish uchun quyidagi shartlarni bajarishingiz kerak. So'rov yuboring va adminlar tekshirib, rankni faollashtirsin!
+                </p>
+                <button
+                  onClick={() => {
+                    if (!currentUser) {
+                      onOpenAuth();
+                      return;
+                    }
+                    onOpenMediaModal();
+                    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+                  }}
+                  className="px-8 py-4 rounded-2xl text-white font-black bg-gradient-to-r from-red-500 via-red-600 to-red-700 shadow-xl shadow-red-500/40 hover:scale-[1.05] active:scale-95 transition-all shine-on-hover text-base"
+                >
+                  So'rov yuborish
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-10 sm:mt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {getItems().map((d, i) => (
+              <Card key={d.id} d={d} delay={i * 0.1} onSelect={onSelect} currentUser={currentUser} onOpenAuth={onOpenAuth} onOpenMediaModal={onOpenMediaModal} />
+            ))}
+          </div>
+        )}
 
         <div className="mt-12 text-center text-sm text-neutral-500 max-w-lg mx-auto">
           Barcha to'lovlar ushbu <span className="font-semibold text-orange-500">Mini App</span> orqali xavfsiz amalga oshiriladi.
@@ -88,8 +127,29 @@ function Header({ activeTab }: { activeTab: string }) {
   );
 }
 
-function Card({ d, delay, onSelect }: { d: Donation; delay: number; onSelect: (d: Donation) => void }) {
+function Card({ d, delay, onSelect, currentUser, onOpenAuth, onOpenMediaModal }: { d: Donation; delay: number; onSelect: (d: Donation) => void; currentUser: any; onOpenAuth: () => void; onOpenMediaModal: () => void }) {
   const [hover, setHover] = useState(false);
+
+  const handleClick = () => {
+    if (d.id === "media") {
+      if (!currentUser) {
+        onOpenAuth();
+        window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+        return;
+      }
+      onOpenMediaModal();
+      window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+      return;
+    }
+
+    if (!currentUser) {
+      onOpenAuth();
+      window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+      return;
+    }
+    onSelect(d);
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+  };
 
   return (
     <div
@@ -137,13 +197,10 @@ function Card({ d, delay, onSelect }: { d: Donation; delay: number; onSelect: (d
           </ul>
 
           <button
-            onClick={() => {
-              onSelect(d);
-              window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
-            }}
-            className="mt-6 w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl text-white font-bold fire-gradient shadow-lg shadow-orange-500/30 hover:scale-[1.02] active:scale-95 transition-all shine-on-hover"
+            onClick={handleClick}
+            className={`mt-6 w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl text-white font-bold ${d.id === "media" ? "bg-gradient-to-r from-red-500 via-red-600 to-red-700 shadow-lg shadow-red-500/30" : "fire-gradient shadow-lg shadow-orange-500/30"} hover:scale-[1.02] active:scale-95 transition-all shine-on-hover`}
           >
-            Tanlash
+            {d.id === "media" ? "So'rov yuborish" : "Tanlash"}
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>

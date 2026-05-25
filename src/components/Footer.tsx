@@ -1,6 +1,21 @@
 import logoImg from "../assets/logo.png";
+import { useSiteConfig } from "../data/siteConfig";
+
+function handleFromUrl(url: string) {
+  try {
+    const u = new URL(url);
+    const path = u.pathname.replace(/\//g, "");
+    return path ? `@${path}` : url;
+  } catch {
+    return url;
+  }
+}
 
 export default function Footer() {
+  const { config } = useSiteConfig();
+  const channelHandle = handleFromUrl(config.links.telegramChannel);
+  const adminHandle = handleFromUrl(config.links.telegramAdmin);
+
   return (
     <footer className="relative border-t border-orange-500/20 mt-10">
       <div className="absolute inset-0 fire-gradient-soft pointer-events-none" />
@@ -33,16 +48,16 @@ export default function Footer() {
         <div>
           <div className="text-xs uppercase tracking-widest font-bold text-orange-500">Aloqa</div>
           <ul className="mt-4 space-y-2 text-sm">
-            <li>📱 Telegram: <a className="hover:text-orange-500 font-bold" href="https://t.me/RageSMPuz" target="_blank" rel="noreferrer">@RageSMPuz</a></li>
-            <li>👑 Admin: <a className="hover:text-orange-500 font-bold" href="https://t.me/vebuca" target="_blank" rel="noreferrer">@vebuca</a></li>
+            <li>📱 Telegram: <a className="hover:text-orange-500 font-bold" href={config.links.telegramChannel} target="_blank" rel="noreferrer">{channelHandle}</a></li>
+            <li>👑 Admin: <a className="hover:text-orange-500 font-bold" href={config.links.telegramAdmin} target="_blank" rel="noreferrer">{adminHandle}</a></li>
           </ul>
         </div>
 
         <div>
           <div className="text-xs uppercase tracking-widest font-bold text-orange-500">Server</div>
           <ul className="mt-4 space-y-2 text-sm">
-            <li>IP: <span className="font-mono font-bold text-orange-500">ragesmp.uz</span></li>
-            <li>Versiya: <span className="font-bold">1.12.2 dan 1.21.11 gacha</span></li>
+            <li>IP: <span className="font-mono font-bold text-orange-500">{config.links.serverIp}</span></li>
+            <li>Versiya: <span className="font-bold">{config.links.serverVersion}</span></li>
             <li>Rejim: <span className="font-bold">SMP</span></li>
             <li>Status: <span className="text-emerald-500 font-bold">● Online</span></li>
           </ul>

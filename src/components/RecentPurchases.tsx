@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { recentPurchases, topDonators, fmtUZS, donations } from "../data/donations";
+import { recentPurchases, topDonators, fmtUZS, donations as defaultDonations } from "../data/donations";
 
 export default function RecentPurchases() {
   const [tab, setTab] = useState<"recent" | "top">("recent");
@@ -51,11 +51,11 @@ function TabBtn({ active, onClick, children }: any) {
 }
 
 function pkgColor(pkg: string) {
-  const d = donations.find((x) => x.name === pkg);
+  const d = defaultDonations.find((x) => x.name === pkg);
   return d?.color ?? "from-orange-500 to-red-500";
 }
 function pkgEmoji(pkg: string) {
-  const d = donations.find((x) => x.name === pkg);
+  const d = defaultDonations.find((x) => x.name === pkg);
   return d?.emoji ?? "🔥";
 }
 

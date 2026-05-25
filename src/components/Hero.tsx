@@ -1,22 +1,227 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Embers from "./Embers";
+import { useSiteConfig } from "../data/siteConfig";
+
+type Burst = { id: number };
+type CopyVariant = "ip" | "promo";
+
+function CopyBurst({ onDone, label, variant }: { onDone: () => void; label: string; variant: CopyVariant }) {
+  useEffect(() => {
+    const t = setTimeout(onDone, 1900);
+    return () => clearTimeout(t);
+  }, [onDone]);
+
+  const orangePalette = ["#ff7a18", "#ffb800", "#ff2d00", "#fff7e6", "#ffd166", "#ff5500"];
+  const emeraldPalette = ["#10b981", "#34d399", "#6ee7b7", "#22d3ee", "#fff", "#a7f3d0"];
+  const palette = variant === "ip" ? orangePalette : emeraldPalette;
+  const flashClass = variant === "ip" ? "copy-glow-orange" : "copy-glow-pulse";
+  const stars = ["✨", "⭐", "💫", "🌟"];
+
+  // 22 ta konfetti — har xil shakl va o'lcham
+  const confetti = Array.from({ length: 22 }).map((_, i) => {
+    const angle = (i / 22) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+    const dist = 55 + Math.random() * 65;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 20; // slight upward bias
+    const size = 5 + Math.random() * 7;
+    const isRect = i % 3 === 0;
+    return {
+      dx,
+      dy,
+      color: palette[i % palette.length],
+      delay: i * 0.012,
+      size,
+      isRect,
+      rotate: Math.random() * 360,
+    };
+  });
+
+  // 8 ta uchqun (spark)
+  const sparks = Array.from({ length: 8 }).map((_, i) => {
+    const angle = (i / 8) * Math.PI * 2 + Math.PI / 8;
+    const dist = 45 + Math.random() * 20;
+    return {
+      dx: Math.cos(angle) * dist,
+      dy: Math.sin(angle) * dist,
+      color: palette[i % palette.length],
+      delay: i * 0.025,
+    };
+  });
+
+  // 4 ta yulduzcha
+  const starParticles = Array.from({ length: 4 }).map((_, i) => {
+    const angle = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const dist = 70 + Math.random() * 20;
+    return {
+      dx: Math.cos(angle) * dist,
+      dy: Math.sin(angle) * dist - 10,
+      emoji: stars[i % stars.length],
+      delay: 0.1 + i * 0.05,
+    };
+  });
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center overflow-visible">
+      {/* glow flash overlay */}
+      <span className={`${flashClass} absolute inset-0 rounded-2xl`} />
+      <span className="copy-flash absolute inset-0 rounded-2xl" />
+
+      {/* double ripples */}
+      <span className={`copy-ripple absolute inset-0 ${variant === "ip" ? "bg-orange-500/40" : "bg-emerald-500/40"}`} />
+      <span className="copy-ripple-2 absolute inset-0" />
+
+      {/* sparks */}
+      {sparks.map((s, i) => (
+        <span
+          key={`spark-${i}`}
+          className="spark-piece"
+          style={{
+            ["--dx" as any]: `${s.dx}px`,
+            ["--dy" as any]: `${s.dy}px`,
+            background: `linear-gradient(180deg, ${s.color}, transparent)`,
+            boxShadow: `0 0 10px ${s.color}`,
+            animationDelay: `${s.delay}s`,
+            transformOrigin: "center",
+            transform: `rotate(${Math.atan2(s.dy, s.dx) * (180 / Math.PI) + 90}deg)`,
+          }}
+        />
+      ))}
+
+      {/* confetti */}
+      {confetti.map((c, i) => (
+        <span
+          key={`conf-${i}`}
+          className="confetti-piece"
+          style={{
+            ["--dx" as any]: `${c.dx}px`,
+            ["--dy" as any]: `${c.dy}px`,
+            width: `${c.size}px`,
+            height: c.isRect ? `${c.size * 0.4}px` : `${c.size}px`,
+            background: c.color,
+            borderRadius: c.isRect ? "2px" : "50%",
+            boxShadow: `0 0 8px ${c.color}80`,
+            animationDelay: `${c.delay}s`,
+          }}
+        />
+      ))}
+
+      {/* yulduzlar */}
+      {starParticles.map((s, i) => (
+        <span
+          key={`star-${i}`}
+          className="star-piece"
+          style={{
+            ["--dx" as any]: `${s.dx}px`,
+            ["--dy" as any]: `${s.dy}px`,
+            animationDelay: `${s.delay}s`,
+          }}
+        >
+          {s.emoji}
+        </span>
+      ))}
+
+      {/* success pill */}
+      <div className={`copy-pop absolute -top-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full ${
+        variant === "ip"
+          ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
+          : "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"
+      } text-white text-[11px] font-black uppercase tracking-widest shadow-[0_10px_30px_-5px_rgba(74,222,128,0.7)] flex items-center gap-2 whitespace-nowrap`}>
+        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5">
+          <path className="check-draw" d="M5 12l5 5L20 7" />
+        </svg>
+        {label}
+      </div>
+    </div>
+  );
+}
 
 export default function Hero() {
-  const ip = "ragesmp.uz";
-  const [copied, setCopied] = useState(false);
+  const { config } = useSiteConfig();
+  const ip = config.links.serverIp;
+  const promoCode = config.links.promoCode;
+  const promoBonus = config.links.promoBonus;
+  const serverVersion = config.links.serverVersion;
 
-  const copy = async () => {
+  const [ipBursts, setIpBursts] = useState<Burst[]>([]);
+  const [promoBursts, setPromoBursts] = useState<Burst[]>([]);
+  const [ipShake, setIpShake] = useState(0);
+  const [promoShake, setPromoShake] = useState(0);
+  const burstId = useRef(0);
+  const [onlinePlayers, setOnlinePlayers] = useState(127);
+  const [totalPlayers, setTotalPlayers] = useState(() => {
+    const savedTotal = localStorage.getItem("ragesmp_total_players");
+    if (savedTotal) {
+      const num = parseInt(savedTotal, 10);
+      if (num >= 1000) {
+        return `${(num / 1000).toFixed(1)}K+`;
+      }
+      return `${num}+`;
+    }
+    return "3.4K+";
+  });
+  const [serverStatus, setServerStatus] = useState(true);
+
+  useEffect(() => {
+    const fetchServerStatus = async () => {
+      try {
+        const response = await fetch(`https://api.mcsrvstat.us/3/${ip}`);
+        const data = await response.json();
+        
+        if (data.online) {
+          setServerStatus(true);
+          setOnlinePlayers(data.players.online);
+          
+          let newTotal = 0;
+          if (data.players.uuid) {
+            newTotal = data.players.uuid.length;
+          }
+          
+          const savedTotal = localStorage.getItem("ragesmp_total_players");
+          let maxTotal = savedTotal ? parseInt(savedTotal, 10) : 0;
+          
+          if (newTotal > maxTotal) {
+            maxTotal = newTotal;
+            localStorage.setItem("ragesmp_total_players", String(maxTotal));
+          }
+          
+          if (maxTotal >= 1000) {
+            setTotalPlayers(`${(maxTotal / 1000).toFixed(1)}K+`);
+          } else {
+            setTotalPlayers(`${maxTotal}+`);
+          }
+        } else {
+          setServerStatus(false);
+          setOnlinePlayers(0);
+        }
+      } catch (error) {
+        console.error("Failed to fetch server status:", error);
+      }
+    };
+
+    fetchServerStatus();
+    const interval = setInterval(fetchServerStatus, 30000);
+
+    return () => clearInterval(interval);
+  }, [ip]);
+
+  const copyIp = async () => {
     try {
       await navigator.clipboard.writeText(ip);
-      setCopied(true);
-      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
-      setTimeout(() => setCopied(false), 1800);
     } catch {}
+    const id = ++burstId.current;
+    setIpBursts((b) => [...b, { id }]);
+    setIpShake((k) => k + 1);
+    window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
   };
 
-  const copyPromo = () => {
-    navigator.clipboard.writeText("/promo vebuca");
-    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("medium");
+  const copyPromo = async () => {
+    try {
+      await navigator.clipboard.writeText(promoCode);
+    } catch {}
+    const id = ++burstId.current;
+    setPromoBursts((b) => [...b, { id }]);
+    setPromoShake((k) => k + 1);
+    window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred("success");
   };
 
   return (
@@ -31,10 +236,10 @@ export default function Hero() {
         <div className="fade-up">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-300 text-xs font-semibold shadow-sm">
             <span className="relative inline-flex h-2 w-2">
-              <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className={`absolute inset-0 rounded-full animate-ping ${serverStatus ? "bg-emerald-500" : "bg-red-500"}`} />
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${serverStatus ? "bg-emerald-500" : "bg-red-500"}`} />
             </span>
-            ONLINE — 1.12.2 - 1.21.11
+            {serverStatus ? "ONLINE" : "OFFLINE"} — {serverVersion}
           </div>
 
           <h1 className="mt-4 sm:mt-6 text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter leading-[0.95]">
@@ -47,26 +252,52 @@ export default function Hero() {
             va maxsus donatlarni qo'lga kirit!
           </p>
 
-          <div className="mt-6 sm:mt-8 relative group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 rounded-2xl blur opacity-40 group-hover:opacity-75 transition duration-1000 animate-pulse" />
-            <div className="relative flex items-center gap-3 sm:gap-4 rounded-2xl border border-emerald-400/50 bg-gradient-to-r from-emerald-900/80 via-emerald-800/80 to-cyan-900/80 px-4 sm:px-6 py-3 sm:py-4 backdrop-blur-xl shadow-2xl shadow-emerald-500/20">
-              <div className="relative flex h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-xl sm:text-2xl animate-bounce">
-                🎟️
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.3em] text-emerald-300 font-black">Promo kod</span>
-                </div>
-                <div className="mt-0.5 flex items-baseline gap-2 sm:gap-3">
-                  <code className="font-mono text-xl sm:text-3xl font-black text-white drop-shadow-[0_0_20px_rgba(74,222,128,0.6)] tracking-wider">/promo vebuca</code>
-                </div>
-              </div>
+          {/* IP + Promo bir qatorda */}
+          <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch gap-3">
+            {/* IP block */}
+            <div className="relative group flex-1">
+              <div className="absolute -inset-1 bg-gradient-to-r from-orange-400 via-amber-400 to-orange-400 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-700" />
               <button
-                onClick={copyPromo}
-                className="flex-shrink-0 h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 grid place-items-center text-emerald-300 hover:bg-emerald-500/40 hover:scale-110 transition-all"
-                title="Nusxa olish"
+                key={`ip-${ipShake}`}
+                onClick={copyIp}
+                className={`relative w-full flex items-center justify-between gap-3 rounded-2xl border border-orange-500/40 bg-white/80 dark:bg-white/[0.04] backdrop-blur-xl px-4 sm:px-5 py-3 sm:py-3.5 hover:border-orange-500 hover:scale-[1.015] active:scale-[0.98] transition-all ${ipShake > 0 ? "copy-shake" : ""}`}
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <div className="text-left min-w-0">
+                  <div className="text-[9px] uppercase tracking-[0.3em] text-orange-500 font-black">Server IP</div>
+                  <div className="mt-0.5 font-mono font-black text-base sm:text-xl text-neutral-900 dark:text-white tracking-wide truncate">{ip}</div>
+                </div>
+                <span className="relative grid place-items-center h-10 w-10 sm:h-11 sm:w-11 rounded-xl fire-gradient text-white flex-shrink-0 shadow-lg shadow-orange-500/30 group-hover:scale-110 transition-transform">
+                  <svg className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </span>
+                {ipBursts.map((b) => (
+                  <CopyBurst key={b.id} variant="ip" label="✓ IP nusxalandi" onDone={() => setIpBursts((arr) => arr.filter((x) => x.id !== b.id))} />
+                ))}
+              </button>
+            </div>
+
+            {/* Promo block — IP ning o'ng tarafida, kichikroq */}
+            <div className="relative group sm:w-[44%] sm:max-w-[280px]">
+              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-emerald-400 rounded-2xl blur opacity-40 group-hover:opacity-75 transition duration-1000" />
+              <button
+                key={`promo-${promoShake}`}
+                onClick={copyPromo}
+                className={`relative w-full flex items-center gap-2.5 rounded-2xl border border-emerald-400/50 bg-gradient-to-r from-emerald-900/85 via-emerald-800/85 to-cyan-900/85 px-3 sm:px-4 py-2.5 sm:py-3 backdrop-blur-xl shadow-lg shadow-emerald-500/25 hover:scale-[1.015] active:scale-[0.98] transition-transform ${promoShake > 0 ? "copy-shake" : ""}`}
+              >
+                <div className="text-base sm:text-lg float-soft">🎟️</div>
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="flex items-center gap-1.5">
+                    <code className="font-mono text-xs sm:text-sm font-black text-white drop-shadow-[0_0_12px_rgba(74,222,128,0.7)] tracking-tight truncate">{promoCode}</code>
+                  </div>
+                  <div className="text-[9px] sm:text-[10px] font-bold text-emerald-200 mt-0.5 truncate">
+                    {promoBonus}
+                  </div>
+                </div>
+                <span className="flex-shrink-0 h-7 w-7 sm:h-8 sm:w-8 rounded-lg bg-emerald-500/30 border border-emerald-400/50 grid place-items-center text-emerald-200 group-hover:bg-emerald-500/50 group-hover:scale-110 transition-all">
+                  <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                </span>
+                {promoBursts.map((b) => (
+                  <CopyBurst key={b.id} variant="promo" label="✓ Promo nusxalandi" onDone={() => setPromoBursts((arr) => arr.filter((x) => x.id !== b.id))} />
+                ))}
               </button>
             </div>
           </div>
@@ -75,37 +306,21 @@ export default function Hero() {
             <a
               href="#donate"
               onClick={() => window.Telegram?.WebApp?.HapticFeedback?.impactOccurred("light")}
-              className="group relative flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-3.5 rounded-xl text-white font-bold fire-gradient shadow-xl shadow-orange-500/40 hover:shadow-orange-500/60 transition-all shine-on-hover"
+              className="group relative flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 sm:py-3.5 rounded-xl text-white font-bold fire-gradient shadow-xl shadow-orange-500/40 hover:shadow-orange-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all shine-on-hover"
             >
               <span>🔥 Donat olish</span>
               <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </a>
-            <button
-              onClick={copy}
-              className="inline-flex flex-1 sm:flex-none items-center justify-center gap-3 pl-4 pr-2 py-2 sm:py-2.5 rounded-xl border border-orange-500/30 bg-white/70 dark:bg-white/5 backdrop-blur hover:border-orange-500 transition-all"
-            >
-              <div className="text-left">
-                <div className="text-[9px] uppercase tracking-widest text-neutral-500">IP</div>
-                <div className="font-mono font-bold text-xs sm:text-sm text-neutral-900 dark:text-white">{ip}</div>
-              </div>
-              <span className="grid place-items-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg fire-gradient text-white flex-shrink-0">
-                {copied ? (
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7"/></svg>
-                ) : (
-                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                )}
-              </span>
-            </button>
           </div>
 
           {/* mini-stats */}
           <div className="mt-10 grid grid-cols-3 gap-4 max-w-md">
             {[
-              { label: "Online", value: "127" },
-              { label: "Ro'yxatdan", value: "3.4K+" },
+              { label: "Online", value: String(onlinePlayers) },
+              { label: "Ro'yxatdan", value: totalPlayers },
               { label: "Uptime", value: "99.9%" },
             ].map((s) => (
-              <div key={s.label} className="rounded-xl border border-orange-500/20 bg-white/60 dark:bg-white/[0.03] backdrop-blur p-3 text-center hover:border-orange-500/60 transition-colors">
+              <div key={s.label} className="rounded-xl border border-orange-500/20 bg-white/60 dark:bg-white/[0.03] backdrop-blur p-3 text-center hover:border-orange-500/60 hover:-translate-y-1 transition-all duration-500">
                 <div className="text-2xl font-black fire-text">{s.value}</div>
                 <div className="text-[11px] uppercase tracking-wider text-neutral-500 mt-0.5">{s.label}</div>
               </div>
@@ -123,18 +338,16 @@ export default function Hero() {
   );
 }
 
-import { useRef } from "react";
-
 function HeroVisual() {
   const orbRef = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     let rafId: number;
     const onMove = (e: MouseEvent) => {
       if (!orbRef.current) return;
       const x = (e.clientX / window.innerWidth - 0.5) * 12;
       const y = (e.clientY / window.innerHeight - 0.5) * 12;
-      
+
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(() => {
         if (orbRef.current) {
@@ -142,7 +355,7 @@ function HeroVisual() {
         }
       });
     };
-    
+
     window.addEventListener("mousemove", onMove);
     return () => {
       window.removeEventListener("mousemove", onMove);
@@ -156,7 +369,7 @@ function HeroVisual() {
       <div className="absolute inset-0 grid place-items-center">
         <div className="relative h-[420px] w-[420px]">
           <div className="absolute inset-0 rounded-full border-2 border-dashed border-orange-500/30 spin-slow" />
-          <div className="absolute inset-8 rounded-full border border-orange-500/20" />
+          <div className="absolute inset-8 rounded-full border border-orange-500/20 spin-reverse" />
           <div className="absolute inset-16 rounded-full border border-orange-500/10" />
 
           {/* center diamond/orb */}
@@ -164,7 +377,7 @@ function HeroVisual() {
             ref={orbRef}
             className="absolute inset-24 rounded-full fire-gradient grid place-items-center shadow-[0_0_80px_rgba(255,90,0,0.6)] flicker"
             style={{
-              transition: "transform 0.2s ease-out",
+              transition: "transform 0.35s cubic-bezier(.22,1,.36,1)",
             }}
           >
             <div className="text-7xl drop-shadow-2xl">🔥</div>
@@ -188,7 +401,7 @@ function HeroVisual() {
                 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
                 style={{ transform: `translate(${x}px, ${y}px) translate(-50%, -50%)` }}
               >
-                <div className="relative h-14 w-14 rounded-2xl glass border border-orange-500/40 grid place-items-center text-2xl shadow-lg hover:scale-110 transition-transform">
+                <div className="relative h-14 w-14 rounded-2xl glass border border-orange-500/40 grid place-items-center text-2xl shadow-lg hover:scale-110 transition-transform float-soft">
                   {b.emoji}
                 </div>
               </div>

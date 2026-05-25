@@ -84,12 +84,12 @@
       "agreed": true
     },
     "1977379033": {
-      "lastBotMessageId": 1333,
+      "lastBotMessageId": 1498,
       "nick": "vebuca",
       "agreed": true
     },
     "-1003848105340": {
-      "lastBotMessageId": 70
+      "lastBotMessageId": 100
     },
     "8760581803": {
       "lastBotMessageId": 1325,
@@ -129,10 +129,6 @@
     }
   },
   "sessions": {
-    "1977379033": {
-      "step": "await_receipt",
-      "orderId": 1779702835719
-    },
     "6038197038": {
       "step": "await_amount",
       "kind": "points"
@@ -140,6 +136,145 @@
   },
   "admins": {},
   "orders": [
+    {
+      "id": 1779736303252,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "213.123 Point",
+        "amountLabel": "213.123 ta",
+        "priceUZS": 256684.5
+      },
+      "createdAt": "2026-05-25T19:11:43.252Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFhGoUl9Tdp-kGzt76-YoPg-Ju113EAAIzIWsbfFagSCupX_7qBvntAQADAgADeQADOwQ"
+    },
+    {
+      "id": 1779735950443,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "567.432 Point",
+        "amountLabel": "567.432 ta",
+        "priceUZS": 683148
+      },
+      "createdAt": "2026-05-25T19:05:50.443Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFhGoUl9Tdp-kGzt76-YoPg-Ju113EAAIzIWsbfFagSCupX_7qBvntAQADAgADeQADOwQ"
+    },
+    {
+      "id": 1779734845362,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "Unmute",
+        "priceUZS": 5000
+      },
+      "createdAt": "2026-05-25T18:47:25.362Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFhGoUl9Tdp-kGzt76-YoPg-Ju113EAAIzIWsbfFagSCupX_7qBvntAQADAgADeQADOwQ"
+    },
+    {
+      "id": 1779734476970,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "SMP Elite",
+        "priceUZS": 50000
+      },
+      "createdAt": "2026-05-25T18:41:16.970Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFhGoUl9Tdp-kGzt76-YoPg-Ju113EAAIzIWsbfFagSCupX_7qBvntAQADAgADeQADOwQ"
+    },
+    {
+      "id": 1779734244807,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "12.111 Point",
+        "amountLabel": "12.111 ta",
+        "priceUZS": 15166.5
+      },
+      "createdAt": "2026-05-25T18:37:24.807Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFe2oUluy7bL-W3uiKKF0wdsmQrne0AAIwIWsbfFagSO7rsUwCp43eAQADAgADdwADOwQ"
+    },
+    {
+      "id": 1779733884672,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "SMP Elite",
+        "priceUZS": 50000
+      },
+      "createdAt": "2026-05-25T18:31:24.672Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFQGoUgo98nbtSk-qaPupECn2LoB3BAAKPIGsbfFagSIKKGr3iilwyAQADAgADbQADOwQ"
+    },
+    {
+      "id": 1779730897715,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "12.312 Shards",
+        "amountLabel": "12.312 ta",
+        "priceUZS": 56560
+      },
+      "createdAt": "2026-05-25T17:41:37.715Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFQGoUgo98nbtSk-qaPupECn2LoB3BAAKPIGsbfFagSIKKGr3iilwyAQADAgADbQADOwQ"
+    },
+    {
+      "id": 1779730147723,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "11.231 Point",
+        "amountLabel": "11.231 ta",
+        "priceUZS": 13846.5
+      },
+      "createdAt": "2026-05-25T17:29:07.723Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIFTGoUhLRsN6RmOVrQHX3ZVN1EzDjAAAKaIGsbfFagSOVQVqiVhm20AQADAgADbQADOwQ"
+    },
+    {
+      "id": 1779729612955,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "4.141 Point",
+        "amountLabel": "4.141 ta",
+        "priceUZS": 6211.5
+      },
+      "createdAt": "2026-05-25T17:20:12.955Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFWGoUhNH-wq1FF-9ozUMlONLsLgABsAACmyBrG3xWoEhEU1Pe-dz4UgEAAwIAA3cAAzsE"
+    },
+    {
+      "id": 1779729581416,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "Unban",
+        "priceUZS": 15000
+      },
+      "createdAt": "2026-05-25T17:19:41.416Z",
+      "status": "paid_waiting_admin",
+      "receiptFileId": "AgACAgIAAxkBAAIFTGoUhLRsN6RmOVrQHX3ZVN1EzDjAAAKaIGsbfFagSOVQVqiVhm20AQADAgADbQADOwQ"
+    },
+    {
+      "id": 1779729029630,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "item": {
+        "name": "5.141 Point",
+        "amountLabel": "5.141 ta",
+        "priceUZS": 7711.5
+      },
+      "createdAt": "2026-05-25T17:10:29.630Z",
+      "status": "approved",
+      "receiptFileId": "AgACAgIAAxkBAAIFQGoUgo98nbtSk-qaPupECn2LoB3BAAKPIGsbfFagSIKKGr3iilwyAQADAgADbQADOwQ"
+    },
     {
       "userId": "8760581803",
       "item": {
@@ -397,6 +532,83 @@
       "orderId": 1779652841989,
       "userId": "1977379033",
       "chatId": 1977379033
+    },
+    "73": {
+      "orderId": 1779729029630,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "76": {
+      "orderId": 1779729581416,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "77": {
+      "orderId": 1779729612955,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "79": {
+      "orderId": 1779730147723,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "81": {
+      "orderId": 1779730897715,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "88": {
+      "orderId": 1779733884672,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "89": {
+      "orderId": 1779734244807,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "90": {
+      "orderId": 1779734476970,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "91": {
+      "orderId": 1779734845362,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "92": {
+      "orderId": 1779735950443,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "93": {
+      "orderId": 1779736303252,
+      "userId": "1977379033",
+      "chatId": 1977379033
+    },
+    "99": {
+      "mediaRequestId": 1779739576667,
+      "userId": "1977379033",
+      "chatId": 1977379033
     }
-  }
+  },
+  "mediaRequests": [
+    {
+      "id": 1779739576667,
+      "userId": "1977379033",
+      "nick": "vebuca",
+      "telegramUsername": "@vebuca",
+      "screenshots": [
+        "AgACAgIAAxkBAAIFz2oUq7U431OoZtHQuq9S9e34KfkZAAIDImsbfFagSFEbtd9noQH-AQADAgADeQADOwQ",
+        "AgACAgIAAxkBAAIFz2oUq7U431OoZtHQuq9S9e34KfkZAAIDImsbfFagSFEbtd9noQH-AQADAgADeQADOwQ",
+        "AgACAgIAAxkBAAIFz2oUq7U431OoZtHQuq9S9e34KfkZAAIDImsbfFagSFEbtd9noQH-AQADAgADeQADOwQ",
+        "AgACAgIAAxkBAAIFz2oUq7U431OoZtHQuq9S9e34KfkZAAIDImsbfFagSFEbtd9noQH-AQADAgADeQADOwQ",
+        "AgACAgIAAxkBAAIFhGoUl9Tdp-kGzt76-YoPg-Ju113EAAIzIWsbfFagSCupX_7qBvntAQADAgADeQADOwQ"
+      ],
+      "status": "approved",
+      "createdAt": "2026-05-25T20:06:16.667Z"
+    }
+  ]
 }

@@ -70,6 +70,11 @@ export default function AuthModal({
             </div>
             <h3 className="text-2xl font-black tracking-tight">Rage<span className="fire-text">SMP</span> Avtorizatsiya</h3>
             <p className="text-xs text-neutral-500 mt-1">Minecraft serverdagi nick va parolingizdan foydalaning</p>
+            <div className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-orange-500/15 via-transparent to-orange-500/15 border border-orange-500/30">
+              <span className="text-xs font-bold text-orange-500">
+                🔥 Akkountingiz bo'lsa <span className="font-black fire-text">login</span> qiling, agar bo'lmasa <span className="font-black fire-text">nick</span> va <span className="font-black fire-text">parol</span> bilan <span className="font-black fire-text">register</span> qiling!
+              </span>
+            </div>
           </div>
 
           <div className="mt-6 flex rounded-xl p-1 bg-neutral-100 dark:bg-white/5 border border-orange-500/20">

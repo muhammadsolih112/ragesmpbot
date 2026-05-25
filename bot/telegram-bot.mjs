@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import http from "node:http";
 import { fileURLToPath } from "node:url";
 
 const TOKEN = process.env.BOT_TOKEN || "8344846056:AAGYdpzJKbT452VbDre6iksZGC9rzlHmZZ8";
@@ -49,8 +50,8 @@ Bu — rasmiy RageSMP Telegram boti bo‘lib, server xizmatlaridan tez, qulay va
 👇 Davom etish uchun menyudan kerakli bo‘limni tanlang!`;
 
 const defaultConfig = {
-  points: { basePerThousandUZS: 1500, discountPerTenThousandUZS: 0 },
-  shards: { basePerThousandUZS: 1000, discountPerTenThousandUZS: 0 },
+  points: { basePerThousandUZS: 1500, discountPerTenThousandUZS: 1.000},
+  shards: { basePerThousandUZS: 3000, discountPerTenThousandUZS: 1.000},
   ranks: [
     { id: "ragepro", name: "RagePro", priceUZS: 10000 },
     { id: "rageplus", name: "Rage+", priceUZS: 30000, tag: "MASHHUR" },
@@ -77,13 +78,14 @@ const defaultConfig = {
 };
 
 function initialStore() {
-  return { config: defaultConfig, users: {}, sessions: {}, admins: {}, orders: [], supportMap: {}, receiptMap: {} };
+  return { config: defaultConfig, users: {}, sessions: {}, admins: {}, orders: [], supportMap: {}, receiptMap: {}, mediaRequests: [] };
 }
 
 function normalizeStore(data) {
   return {
     ...initialStore(),
     ...data,
+    mediaRequests: data.mediaRequests || [],
     config: {
       ...defaultConfig,
       ...(data.config || {}),
@@ -125,7 +127,7 @@ function money(valueUZS) {
 }
 
 function calculate(amount, basePerThousandUZS, discountPerTenThousandUZS) {
-  const normalized = Math.min(1000000, Math.max(1000, Number(amount) || 1000));
+  const normalized = Math.min(5000000, Math.max(1000, Number(amount) || 1000));
   const base = (normalized / 1000) * basePerThousandUZS;
   const discount = Math.floor(normalized / 10000) * discountPerTenThousandUZS;
   return { amount: normalized, base, discount, total: Math.max(0, base - discount) };
@@ -258,7 +260,8 @@ function setSession(userId, session) {
 function menuRows(userId) {
   const rows = [
     [{ text: "📖 Manga O'qish (Mini App)", web_app: { url: WEBAPP_URL } }],
-    [{ text: "🎁 Rank sotib olish", callback_data: "menu_ranks" }, { text: "📦 Donate case", callback_data: "menu_cases" }],
+    [{ text: "🎁 Rank sotib olish", callback_data: "menu_ranks" }, { text: "📺 Media rank", callback_data: "menu_media" }],
+    [{ text: "📦 Donate case", callback_data: "menu_cases" }],
     [{ text: "💎 Point sotib olish", callback_data: "menu_points" }, { text: "🔮 Shard sotib olish", callback_data: "menu_shards" }],
     [{ text: "📡 Unmute", callback_data: "buy_services_1" }, { text: "🚫 Unban", callback_data: "buy_services_0" }],
     [{ text: "ℹ️ Bot haqida", callback_data: "about_bot" }, { text: "📜 Tarix", callback_data: "order_history" }],
@@ -360,7 +363,7 @@ async function showCurrencyMenu(chatId, userId, kind) {
   setSession(userId, { step: "await_amount", kind });
   await send(
     chatId,
-    `${kind === "points" ? "💎 <b>Point sotib olish</b>" : "🔮 <b>Shard sotib olish</b>"}\n━━━━━━━━━━━━━━━━━━━━\n\n1.000 tasi: <b>${money(base)}</b>\nHar 10.000 uchun skidka: <b>${money(discount)}</b>\n\nMiqdorni yozing.\nEng kami: <b>1.000</b>\nEng ko'pi: <b>1.000.000</b>\n\nMasalan: <code>25000</code>`,
+    `${kind === "points" ? "💎 <b>Point sotib olish</b>" : "🔮 <b>Shard sotib olish</b>"}\n━━━━━━━━━━━━━━━━━━━━\n\n1.000 tasi: <b>${money(base)}</b>\nHar 10.000 uchun skidka: <b>${money(discount)}</b>\n\nMiqdorni yozing.\nEng kami: <b>1.000</b>\nEng ko'pi: <b>5.000.000</b>\n\nMasalan: <code>25000</code>`,
     keyboard([[{ text: "⬅️ Ortga", callback_data: "main_menu" }]])
   );
 }
@@ -417,6 +420,27 @@ async function confirmOrder(chatId, userId) {
     `<i>Adminlar chekni tekshirib, xaridni faollashtirib berishadi.</i>`;
 
   await send(chatId, text);
+}
+
+async function showMediaRequirements(chatId, userId) {
+  const text = `📺 <b>MEDIA RANK SHARTLARI</b>\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `Media rank olish uchun quyidagi shartlarni bajarishingiz kerak:\n\n` +
+    `📺 <b>+1 000 obunachi</b>\n` +
+    `👥 <b>Streamda kamida 50 ta online</b>\n` +
+    `🎥 <b>Biz bilan aloqaga chiqishdan oldin 7 ta stream qilgan bo'lishi</b>\n` +
+    `👁️ <b>Stream prasmotrlari kamida 500+ tadan ko'p</b>\n` +
+    `🌐 <b>Ekranda server ip si (ragesmp.uz) turishi majburiy!</b>\n\n` +
+    `Quyidagi tugmani bosing va so'rov yuboring!`;
+
+  await send(chatId, text, keyboard([
+    [{ text: "✅ Bular menda mavjud", callback_data: "media_requirements_accepted" }],
+    [{ text: "⬅️ Ortga", callback_data: "main_menu" }]
+  ]));
+}
+
+async function showMediaRequestForm(chatId, userId) {
+  setSession(userId, { step: "await_media_telegram" });
+  await send(chatId, "📺 <b>Telegram username'ingizni yozing</b>\n\nMasalan: @username");
 }
 
 async function showAdminLogin(chatId, userId) {
@@ -635,19 +659,22 @@ async function handleReceiptDecision(chatId, userId, data, message) {
     saveStore(store);
   }
 
-  if (approved) {
-    await sendRaw(
-      order.userId,
-      `✅🎉 <b>Chekingiz tasdiqlandi!</b>\n\n🎮 Endi o'yinga kirib-chiqib, sotib olgan narsalaringizni tekshirib ko'rishingiz mumkin.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>\n💰 Summa: <b>${order.item.priceUZS}</b>\n\n🔥 RageSMP bilan zavqlaning!`
-    );
-    return send(chatId, `✅ <b>#${orderId}</b> buyurtma tasdiqlandi.`);
+  // Send notification to user only if we have a valid userId
+  if (order.userId && order.userId !== "site") {
+    if (approved) {
+      await sendRaw(
+        order.userId,
+        `✅🎉 <b>Chekingiz tasdiqlandi!</b>\n\n🎮 Endi o'yinga kirib-chiqib, sotib olgan narsalaringizni tekshirib ko'rishingiz mumkin.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>\n💰 Summa: <b>${order.item.priceUZS}</b>\n\n🔥 RageSMP bilan zavqlaning!`
+      );
+    } else {
+      await sendRaw(
+        order.userId,
+        `❌ <b>To'lovingiz bekor qilindi.</b>\n\nIltimos, supportga murojaat qiling yoki qaytadan to'lov qiling.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>`
+      );
+    }
   }
 
-  await sendRaw(
-    order.userId,
-    `❌ <b>To'lovingiz bekor qilindi.</b>\n\nIltimos, supportga murojaat qiling yoki qaytadan to'lov qiling.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>`
-  );
-  return send(chatId, `❌ <b>#${orderId}</b> buyurtma bekor qilindi.`);
+  return send(chatId, `✅ <b>#${orderId}</b> buyurtma ${approved ? "tasdiqlandi" : "bekor qilindi"}.`);
 }
 
 async function setMenuButton(chatId, userId) {
@@ -732,6 +759,54 @@ async function handleMessage(message) {
     return showMainMenu(chatId, userId);
   }
 
+  if (session?.step === "await_media_telegram") {
+    const telegramUsername = text.trim();
+    if (!telegramUsername) {
+      return send(chatId, "Iltimos, telegram username'ingizni yozing!");
+    }
+    setSession(userId, { step: "await_media_screenshots", telegramUsername, screenshots: [] });
+    await send(chatId, "📸 <b>Screenshot'larni yuboring</b>\n\nQilgan streamlaringiz va kanalingiz rasmini birma-bir yuboring! Eng kamida 1 ta, eng ko'pi 8 ta!");
+    return;
+  }
+
+  if (session?.step === "await_media_screenshots") {
+    const photo = message.photo?.at(-1);
+    if (!photo) {
+      await send(chatId, "Iltimos, faqat screenshot'larni (rasm) yuboring!\n\nYoki tugmani bosing va so'rovni yuboring:");
+      await send(chatId, "Sozlamalar:", keyboard([
+        [{ text: "✅ So'rovni yuborish", callback_data: "media_submit_request" }],
+        [{ text: "⬅️ Ortga", callback_data: "main_menu" }]
+      ]));
+      return;
+    }
+
+    const currentScreenshots = session.screenshots || [];
+    if (currentScreenshots.length >= 8) {
+      await send(chatId, "Siz allaqachon 8 ta screenshot yubordingiz! So'rovni yuborishingiz mumkin!");
+      await send(chatId, "Sozlamalar:", keyboard([
+        [{ text: "✅ So'rovni yuborish", callback_data: "media_submit_request" }],
+        [{ text: "⬅️ Ortga", callback_data: "main_menu" }]
+      ]));
+      return;
+    }
+
+    setSession(userId, { ...session, screenshots: [...currentScreenshots, photo.file_id] });
+    
+    const remaining = 8 - (currentScreenshots.length + 1);
+    if (remaining > 0) {
+      await send(chatId, `✅ Rasm qabul qilindi! Yana ${remaining} ta rasm yuborishingiz mumkin!\n\nYoki so'rovni yuboring:`, keyboard([
+        [{ text: "✅ So'rovni yuborish", callback_data: "media_submit_request" }],
+        [{ text: "⬅️ Ortga", callback_data: "main_menu" }]
+      ]));
+    } else {
+      await send(chatId, `✅ Barcha 8 ta rasm qabul qilindi! Endi so'rovni yuboring:`, keyboard([
+        [{ text: "✅ So'rovni yuborish", callback_data: "media_submit_request" }],
+        [{ text: "⬅️ Ortga", callback_data: "main_menu" }]
+      ]));
+    }
+    return;
+  }
+
   if (session?.step === "await_nick") {
     store.users[userId] = { ...(store.users[userId] || {}), nick: text, agreed: true };
     clearSession(userId);
@@ -743,7 +818,7 @@ async function handleMessage(message) {
   if (session?.step === "await_amount") {
     const amount = Number(text.replace(/\D/g, ""));
     if (!amount) return send(chatId, "Miqdorni raqam bilan yozing. Masalan: <code>25000</code>");
-    if (amount < 1000 || amount > 1000000) return send(chatId, "Miqdor 1.000 dan 1.000.000 gacha bo'lishi kerak.");
+    if (amount < 1000 || amount > 5000000) return send(chatId, "Miqdor 1.000 dan 5.000.000 gacha bo'lishi kerak.");
     const cfg = store.config[session.kind];
     const result = calculate(amount, cfg.basePerThousandUZS, cfg.discountPerTenThousandUZS);
     clearSession(userId);
@@ -802,13 +877,140 @@ async function handleCallback(query) {
   if (data === "menu_ranks") return showList(chatId, "ranks");
   if (data === "menu_cases") return showList(chatId, "cases");
   if (data === "menu_services") return showList(chatId, "services");
+  if (data === "menu_media") return showMediaRequirements(chatId, userId);
+  if (data === "media_requirements_accepted") return showMediaRequestForm(chatId, userId);
   if (data === "confirm_order") return confirmOrder(chatId, userId);
+  if (data === "media_submit_request") {
+    const session = store.sessions[userId];
+    if (!session || session.step !== "await_media_screenshots") {
+      return showMainMenu(chatId, userId);
+    }
+    if (!session.screenshots || session.screenshots.length === 0) {
+      await send(chatId, "Iltimos, kamida bitta screenshot yuboring!");
+      return;
+    }
+
+    const mediaRequest = {
+      id: Date.now(),
+      userId,
+      nick: store.users[userId]?.nick,
+      telegramUsername: session.telegramUsername,
+      screenshots: session.screenshots,
+      status: "pending",
+      createdAt: new Date().toISOString()
+    };
+    store.mediaRequests.unshift(mediaRequest);
+    saveStore(store);
+
+    // Send to RECEIPT_CHAT_ID
+    const caption = `📺 <b>YANGI MEDIA RANK SO'ROVI</b>\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+      `🆔 So'rov ID: <code>#${mediaRequest.id}</code>\n` +
+      `📅 Sana: <b>${formatDateTime()}</b>\n` +
+      `👤 Foydalanuvchi: <b>${escapeHtml(userMention(query.from))}</b>\n` +
+      `🆔 User ID: <code>${userId}</code>\n` +
+      `🎮 Nick: <b>${escapeHtml(mediaRequest.nick || "kiritilmagan")}</b>\n` +
+      `📱 Telegram: <b>${escapeHtml(mediaRequest.telegramUsername)}</b>\n\n` +
+      `Quyidan tasdiqlang yoki bekor qiling:`;
+
+    let lastMessageId = null;
+    if (mediaRequest.screenshots.length === 1) {
+      // Bitta rasm bo'lsa oddiy yuboramiz
+      const msg = await sendPhotoRaw(
+        RECEIPT_CHAT_ID, 
+        mediaRequest.screenshots[0], 
+        caption, 
+        keyboard([
+          [{ text: "✅ Tasdiqlash", callback_data: `media_accept_${mediaRequest.id}` }, 
+           { text: "❌ Bekor qilish", callback_data: `media_reject_${mediaRequest.id}` }]
+        ])
+      );
+      lastMessageId = msg.message_id;
+    } else {
+      // Ko'p rasm bo'lsa media group yuboramiz
+      const mediaGroup = mediaRequest.screenshots.map((fileId, index) => ({
+        type: "photo",
+        media: fileId,
+        caption: index === 0 ? caption : "",
+        parse_mode: index === 0 ? "HTML" : undefined
+      }));
+
+      // Birinchi media group ni yuboramiz
+      const formData1 = new FormData();
+      formData1.append("chat_id", String(RECEIPT_CHAT_ID));
+      formData1.append("media", JSON.stringify(mediaGroup));
+      
+      const mediaGroupResult = await apiForm("sendMediaGroup", formData1);
+      if (mediaGroupResult && mediaGroupResult.length > 0) {
+        lastMessageId = mediaGroupResult[mediaGroupResult.length - 1].message_id;
+        
+        // Oxirgi rasmning ustiga tugmalarni qo'shamiz
+        await api("editMessageReplyMarkup", {
+          chat_id: String(RECEIPT_CHAT_ID),
+          message_id: lastMessageId,
+          reply_markup: keyboard([
+            [{ text: "✅ Tasdiqlash", callback_data: `media_accept_${mediaRequest.id}` }, 
+             { text: "❌ Bekor qilish", callback_data: `media_reject_${mediaRequest.id}` }]
+          ])
+        });
+      }
+    }
+
+    store.receiptMap[String(lastMessageId)] = { mediaRequestId: mediaRequest.id, userId, chatId };
+    saveStore(store);
+
+    clearSession(userId);
+    await send(chatId, "✅ Media so'rovingiz yuborildi! Adminlar tekshirganidan keyin sizga xabar yuboriladi.");
+    return showMainMenu(chatId, userId);
+  }
   if (data === "about_bot") return showBotIntro(chatId, userId, "menu");
   if (data === "support") return askSupportQuestion(chatId, userId);
   if (data === "profile") return send(chatId, `👤 <b>Profil</b>\nNick: <b>${store.users[userId]?.nick || "kiritilmagan"}</b>\nUser ID: <code>${userId}</code>`, keyboard([[{ text: "✏️ Nick o'zgartirish", callback_data: "change_nick" }], [{ text: "⬅️ Orqaga", callback_data: "main_menu" }]]));
   if (data === "change_nick") return changeNick(chatId, userId);
   if (data === "order_history") return showUserHistory(chatId, userId);
   if (data.startsWith("receipt_accept_") || data.startsWith("receipt_reject_")) return handleReceiptDecision(chatId, userId, data, query.message);
+  if (data.startsWith("media_accept_") || data.startsWith("media_reject_")) {
+    if (!isAdmin(userId)) return send(chatId, "⛔ Siz admin emassiz.");
+    const parts = data.split("_");
+    const action = parts[1];
+    const requestId = parts.slice(2).join("_");
+    
+    const mediaRequest = store.mediaRequests.find((r) => String(r.id) === String(requestId));
+    if (!mediaRequest) {
+      return send(chatId, "⚠️ Media so'rovi topilmadi.");
+    }
+
+    const approved = action === "accept";
+    mediaRequest.status = approved ? "approved" : "rejected";
+    saveStore(store);
+
+    // Notify user
+    const userChatId = mediaRequest.userId;
+    if (userChatId) {
+      try {
+        if (approved) {
+          const mediaRules = `🎉 <b>Tabriklaymiz! Siz endi RageSMP serverida Media siz!</b>\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `📺 <b>Media rank qoidalari:</b>\n\n` +
+            `⚠️ Agar streamda server IP (ragesmp.uz) ni ko'rsatmasangiz — media rank olinadi!\n` +
+            `⚠️ Agar 3 kun davomida stream qilmasangiz — media rank olinadi!\n` +
+            `⚠️ Agar streamda chit ishlatsangiz — media rank olinadi!\n` +
+            `⚠️ Agar streamda server administratsiyasiga qarshi chiqsangiz — media rank olinadi!\n\n` +
+            `🔥 <b>RageSMP bilan zavqlaning!</b>`;
+          
+          await sendRaw(userChatId, mediaRules);
+        } else {
+          await sendRaw(
+            userChatId,
+            "❌ <b>Media rank so'rovingiz bekor qilindi</b>\n\nIltimos, admin bilan bog'laning."
+          );
+        }
+      } catch (e) {
+        console.error("Failed to send notification to user:", e);
+      }
+    }
+
+    await send(chatId, approved ? "✅ Media so'rovi tasdiqlandi!" : "❌ Media so'rovi bekor qilindi!");
+    return;
+  }
 
   if (data.startsWith("buy_points_") || data.startsWith("buy_shards_")) {
     const [, kind, amountRaw] = data.split("_");
@@ -849,6 +1051,166 @@ async function handleCallback(query) {
     return promptAdminEdit(chatId, userId, type, key);
   }
 }
+
+// ============================================================
+// HTTP API server — sayt admin paneli botdagi buyurtmalarni ola olishi uchun
+// Endpoint: GET /api/orders → JSON { orders, users }
+// Endpoint: POST /api/orders/:id/status → { status: "approved" | "rejected" }
+// CORS yoqilgan.
+// ============================================================
+const API_PORT = Number(process.env.BOT_API_PORT || 3001);
+http.createServer(async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Cache-Control", "no-store");
+
+  if (req.method === "OPTIONS") {
+    res.statusCode = 204;
+    return res.end();
+  }
+
+  if (req.method === "GET" && req.url && req.url.startsWith("/api/orders")) {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    const payload = {
+      orders: store.orders.slice(0, 100),
+      mediaRequests: store.mediaRequests.slice(0, 100),
+      users: Object.entries(store.users).map(([id, u]) => ({ ...u, id })),
+      generatedAt: new Date().toISOString(),
+    };
+    return res.end(JSON.stringify(payload));
+  }
+
+  // POST endpoint to create a new order from the website
+  if (req.method === "POST" && req.url === "/api/orders") {
+    try {
+      // Read request body
+      let body = "";
+      for await (const chunk of req) {
+        body += chunk;
+      }
+      const data = JSON.parse(body);
+
+      const orderId = Date.now();
+      const order = {
+        id: orderId,
+        userId: data.telegramId || "site",
+        nick: data.player,
+        item: {
+          name: data.pkg,
+          priceUZS: data.price
+        },
+        createdAt: new Date().toISOString(),
+        status: "paid_waiting_admin",
+        receiptFileId: data.receiptFileId || undefined,
+        receiptImage: data.receiptImage || undefined,
+        source: "site"
+      };
+
+      store.orders.unshift(order);
+      saveStore(store);
+
+      // Send receipt to RECEIPT_CHAT_ID
+      const receiptText = `🧾 <b>Yangi Mini App xaridi</b>\n━━━━━━━━━━━━━━━━━━━━\n\n🆔 Buyurtma: <code>#${orderId}</code>\n📅 Sana: <b>${formatDateTime()}</b>\n🎮 Nick: <b>${escapeHtml(order.nick)}</b>\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>\n💰 To'lov summasi: <b>${money(order.item.priceUZS)}</b>\n🆔 User: ${data.telegramUsername || "Noma'lum"}\n🆔 Telegram ID: <code>${data.telegramId || "noma'lum"}</code>\n\nQuyidan tasdiqlang yoki bekor qiling:`;
+
+      if (data.receiptFileId) {
+        const receiptMessage = await sendPhotoRaw(
+          RECEIPT_CHAT_ID,
+          data.receiptFileId,
+          receiptText,
+          keyboard([[{ text: "✅ Tasdiqlash", callback_data: `receipt_accept_${orderId}` }, { text: "❌ Bekor qilish", callback_data: `receipt_reject_${orderId}` }]])
+        );
+        store.receiptMap[String(receiptMessage.message_id)] = { orderId, userId: order.userId, chatId: null };
+        saveStore(store);
+      } else {
+        const receiptMessage = await sendRaw(
+          RECEIPT_CHAT_ID,
+          receiptText,
+          keyboard([[{ text: "✅ Tasdiqlash", callback_data: `receipt_accept_${orderId}` }, { text: "❌ Bekor qilish", callback_data: `receipt_reject_${orderId}` }]])
+        );
+        store.receiptMap[String(receiptMessage.message_id)] = { orderId, userId: order.userId, chatId: null };
+        saveStore(store);
+      }
+
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      return res.end(JSON.stringify({ success: true, order }));
+    } catch (error) {
+      console.error("API error (create order):", error);
+      res.statusCode = 500;
+      return res.end(JSON.stringify({ error: "Internal server error" }));
+    }
+  }
+
+  // POST endpoint to update order status
+  if (req.method === "POST" && req.url && req.url.match(/^\/api\/orders\/\d+\/status$/)) {
+    try {
+      const parts = req.url.split("/");
+      const orderId = parts[parts.length - 2];
+      
+      // Read request body
+      let body = "";
+      for await (const chunk of req) {
+        body += chunk;
+      }
+      const data = JSON.parse(body);
+      const newStatus = data.status; // "approved" or "rejected"
+
+      if (newStatus !== "approved" && newStatus !== "rejected") {
+        res.statusCode = 400;
+        return res.end(JSON.stringify({ error: "Invalid status. Use 'approved' or 'rejected'." }));
+      }
+
+      // Find and update order
+      const orderIndex = store.orders.findIndex((o) => String(o.id) === String(orderId));
+      if (orderIndex === -1) {
+        res.statusCode = 404;
+        return res.end(JSON.stringify({ error: "Order not found" }));
+      }
+
+      const order = store.orders[orderIndex];
+      if (order.status === "approved" || order.status === "rejected") {
+        res.statusCode = 400;
+        return res.end(JSON.stringify({ error: "Order already processed" }));
+      }
+
+      // Update status
+      store.orders[orderIndex].status = newStatus;
+      saveStore(store);
+
+      // Send notification to user if we have their userId
+      if (order.userId && order.userId !== "site") {
+        if (newStatus === "approved") {
+          await sendRaw(
+            order.userId,
+            `✅🎉 <b>Chekingiz tasdiqlandi!</b>\n\n🎮 Endi o'yinga kirib-chiqib, sotib olgan narsalaringizni tekshirib ko'rishingiz mumkin.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>\n💰 Summa: <b>${order.item.priceUZS}</b>\n\n🔥 RageSMP bilan zavqlaning!`
+          );
+        } else {
+          await sendRaw(
+            order.userId,
+            `❌ <b>To'lovingiz bekor qilindi.</b>\n\nIltimos, supportga murojaat qiling yoki qaytadan to'lov qiling.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>`
+          );
+        }
+      }
+
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      return res.end(JSON.stringify({ success: true, order: store.orders[orderIndex] }));
+    } catch (error) {
+      console.error("API error:", error);
+      res.statusCode = 500;
+      return res.end(JSON.stringify({ error: "Internal server error" }));
+    }
+  }
+
+  if (req.method === "GET" && req.url === "/api/health") {
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify({ ok: true, orders: store.orders.length }));
+  }
+
+  res.statusCode = 404;
+  res.end(JSON.stringify({ error: "Not found" }));
+}).listen(API_PORT, () => {
+  console.log(`📡 Bot HTTP API: http://localhost:${API_PORT}/api/orders`);
+});
 
 let offset = 0;
 console.log("RageSMP Telegram bot ishga tushdi...");

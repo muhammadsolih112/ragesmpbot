@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { User, Transaction } from "../data/store";
-import { donations, fmtUZS, type Donation } from "../data/donations";
+import { fmtUZS, type Donation } from "../data/donations";
+import { useSiteConfig } from "../data/siteConfig";
 
 function FloatingText({ value, color }: { value: string; color: string }) {
   return (
@@ -50,6 +51,8 @@ export default function UserDashboard({
   onBack: () => void;
   onBuy: (d: Donation) => void;
 }) {
+  const { config } = useSiteConfig();
+  const donations = config.donations;
   const myTxs = txs.filter((t) => t.player.toLowerCase() === user.nick.toLowerCase());
   const currentDonation = donations.find((d) => d.name.toLowerCase() === user.rank.toLowerCase());
 

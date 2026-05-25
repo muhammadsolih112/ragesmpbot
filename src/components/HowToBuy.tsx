@@ -1,3 +1,5 @@
+import { useSiteConfig } from "../data/siteConfig";
+
 const steps = [
   {
     n: "01",
@@ -32,6 +34,18 @@ const steps = [
 ];
 
 export default function HowToBuy() {
+  const { config } = useSiteConfig();
+  const botUrl = config.links.telegramBot;
+  const botHandle = (() => {
+    try {
+      const u = new URL(botUrl);
+      const path = u.pathname.replace(/\//g, "");
+      return path ? `@${path}` : "@RageSMP_bot";
+    } catch {
+      return "@RageSMP_bot";
+    }
+  })();
+
   return (
     <section id="how" className="relative py-24 overflow-hidden reveal">
       <div className="absolute inset-0 grid-bg opacity-50" />
@@ -72,13 +86,13 @@ export default function HowToBuy() {
 
         <div className="mt-14 text-center">
           <a
-            href="https://t.me/RageSMP_bot"
+            href={botUrl}
             target="_blank"
             rel="noreferrer"
             className="inline-flex items-center gap-3 px-8 py-4 rounded-xl text-white font-bold fire-gradient shadow-xl shadow-orange-500/40 hover:shadow-orange-500/60 hover:scale-[1.03] transition-all shine-on-hover"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M21.95 4.36 18.7 19.7c-.24 1.08-.88 1.34-1.78.83l-4.92-3.62-2.37 2.28c-.26.26-.48.48-.99.48l.35-5.02 9.13-8.25c.4-.35-.09-.55-.62-.2L6.21 13.05 1.34 11.5c-1.06-.34-1.08-1.06.22-1.57L20.59 2.9c.88-.34 1.65.21 1.36 1.46z"/></svg>
-            @RageSMP_bot ga o'tish
+            {botHandle} ga o'tish
           </a>
         </div>
       </div>
