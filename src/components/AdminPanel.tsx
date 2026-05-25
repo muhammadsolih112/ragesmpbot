@@ -584,6 +584,8 @@ export default function AdminPanel({
                     <tr className="border-b border-orange-500/10 text-xs uppercase tracking-widest text-neutral-500 font-semibold bg-orange-500/5">
                       <th className="py-3.5 px-6">O'yinchi / Ro'yxatdan o'tgan</th>
                       <th className="py-3.5 px-6">Daraja (Rank)</th>
+                      <th className="py-3.5 px-6">💎 Pointlar</th>
+                      <th className="py-3.5 px-6">🔮 Shardlar</th>
                       <th className="py-3.5 px-6">Jami Xarajat</th>
                       <th className="py-3.5 px-6">Rol</th>
                       <th className="py-3.5 px-6 text-right">Amallar</th>
@@ -592,8 +594,8 @@ export default function AdminPanel({
                   <tbody className="divide-y divide-orange-500/10">
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center text-neutral-500 text-sm">
-                          Foydalanuvchilar topilmadi.
+                        <td colSpan={7} className="py-12 text-center text-neutral-500 text-sm">
+                          Foydalanuvchi topilmadi.
                         </td>
                       </tr>
                     ) : (
@@ -619,6 +621,12 @@ export default function AdminPanel({
                               <option value="Rage+">Rage+</option>
                               <option value="SMP Elite">SMP Elite</option>
                             </select>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="font-black text-blue-500 text-sm">{u.points.toLocaleString()}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="font-black text-purple-500 text-sm">{u.shards.toLocaleString()}</div>
                           </td>
                           <td className="py-4 px-6 font-bold fire-text text-base">{fmtUZS(u.spent)}</td>
                           <td className="py-4 px-6 text-xs text-neutral-500 capitalize">{u.role}</td>
@@ -676,14 +684,25 @@ export default function AdminPanel({
                     value={simPkg}
                     onChange={(e) => {
                       setSimPkg(e.target.value);
-                      const p = e.target.value === "SMP Elite" ? 50000 : e.target.value === "Rage+" ? 30000 : 10000;
-                      setSimPrice(p);
+                      let price = 0;
+                      if (e.target.value === "SMP Elite") price = 50000;
+                      else if (e.target.value === "Rage+") price = 30000;
+                      else if (e.target.value === "RagePro") price = 10000;
+                      else if (e.target.value === "1.000 Point") price = 1500;
+                      else if (e.target.value === "1.000 Shards") price = 1000;
+                      else if (e.target.value === "Unban") price = 15000;
+                      else if (e.target.value === "Unmute") price = 5000;
+                      setSimPrice(price);
                     }}
                     className="mt-1.5 w-full px-4 py-3 rounded-xl border border-orange-500/30 bg-neutral-50 dark:bg-white/[0.03] focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none text-sm font-bold transition-all"
                   >
                     <option value="SMP Elite">SMP Elite (50,000 so'm)</option>
                     <option value="Rage+">Rage+ (30,000 so'm)</option>
                     <option value="RagePro">RagePro (10,000 so'm)</option>
+                    <option value="1.000 Point">1.000 Point (1,500 so'm)</option>
+                    <option value="1.000 Shards">1.000 Shards (1,000 so'm)</option>
+                    <option value="Unban">Unban (15,000 so'm)</option>
+                    <option value="Unmute">Unmute (5,000 so'm)</option>
                   </select>
                 </div>
 
