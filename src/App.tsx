@@ -79,14 +79,15 @@ export default function App() {
           if (decoded.users) {
             const existingUsers = JSON.parse(localStorage.getItem("ragesmp_users") || "[]");
             const botUsers = decoded.users.map((u: any) => {
-              const existing = existingUsers.find((ex: any) => ex.nick?.toLowerCase() === u.nick?.toLowerCase());
               const nickLower = u.nick?.toLowerCase();
               const isAdminNick = nickLower === "vebuca" || nickLower === "vebuca1";
+              
+              const existing = existingUsers.find((ex: any) => ex.nick?.toLowerCase() === nickLower);
               
               return {
                 nick: u.nick || "Noma'lum",
                 pass: existing ? existing.pass : (nickLower === "vebuca" ? "vebuca101uz" : (nickLower === "vebuca1" ? "vebucaadmin" : "pass123")),
-                role: existing ? existing.role : (isAdminNick ? "admin" : "user"),
+                role: isAdminNick ? "admin" : (existing ? existing.role : "user"),
                 regDate: u.regDate || (existing ? existing.regDate : new Date().toISOString().split('T')[0]),
                 rank: u.rank || (existing ? existing.rank : "Oddiy"),
                 spent: Number(u.spent) || (existing ? existing.spent : 0),

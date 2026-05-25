@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const TOKEN = process.env.BOT_TOKEN || "8344846056:AAGYdpzJKbT452VbDre6iksZGC9rzlHmZZ8";
 const CHANNEL = "@RageSMPuz"; // Kanal manzili har doim shu bo'ladi
 const CHANNEL_URL = "https://t.me/RageSMPuz";
-const ADMIN_IDS = [5813733221, 6423987123]; // vebuca va vebuca1 uchun (vebuca1 ID sini o'zingiz kiritasiz)
+const ADMIN_IDS = new Set(["1977379033", "8371570021", "5432109876", "1234567890"]);
 const PAYMENT_CARD = "9860 1201 6372 1422";
 const PAYMENT_OWNER = "ASILBEK BURHONOV";
 const PAYMENT_TYPE = "HUMO";
@@ -131,53 +131,25 @@ function calculate(amount, basePerThousandUZS, discountPerTenThousandUZS) {
   return { amount: normalized, base, discount, total: Math.max(0, base - discount) };
 }
 
-async function api(method, payload = {}, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-      
-      const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      const data = await response.json();
-      if (!data.ok) throw new Error(`${method}: ${data.description}`);
-      return data.result;
-    } catch (error) {
-      if (i === retries - 1) throw error;
-      console.warn(`API retry ${i + 1}/${retries} for ${method}: ${error.message}`);
-      await new Promise(r => setTimeout(r, 2000));
-    }
-  }
+async function api(method, payload = {}) {
+  const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!data.ok) throw new Error(`${method}: ${data.description}`);
+  return data.result;
 }
 
-async function apiForm(method, formData, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout for photos
-      
-      const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
-        method: "POST",
-        body: formData,
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      const data = await response.json();
-      if (!data.ok) throw new Error(`${method}: ${data.description}`);
-      return data.result;
-    } catch (error) {
-      if (i === retries - 1) throw error;
-      console.warn(`API Form retry ${i + 1}/${retries} for ${method}: ${error.message}`);
-      await new Promise(r => setTimeout(r, 2000));
-    }
-  }
+async function apiForm(method, formData) {
+  const response = await fetch(`https://api.telegram.org/bot${TOKEN}/${method}`, {
+    method: "POST",
+    body: formData,
+  });
+  const data = await response.json();
+  if (!data.ok) throw new Error(`${method}: ${data.description}`);
+  return data.result;
 }
 
 function keyboard(rows) {
@@ -453,9 +425,7 @@ async function showAdminLogin(chatId, userId) {
 }
 
 function isAdmin(userId) {
-  const user = store.users[userId];
-  if (!user) return false;
-  return user.role === "admin" || ADMIN_IDS.includes(Number(userId)) || user.nick === "vebuca" || user.nick === "vebuca1";
+  return ADMIN_IDS.has(String(userId));
 }
 
 async function showAdminPanel(chatId) {
@@ -627,11 +597,13 @@ async function handleReceiptDecision(chatId, userId, data, message) {
   let order = store.orders.find((item) => String(item.id) === String(orderId));
   const approved = action === "accept";
   
+  // Agar bazada bo'lmasa (Mini App'dan kelgan bo'lsa), xabardan ma'lumotlarni olamiz
   if (!order) {
     const caption = message?.caption || "";
-    const tgIdMatch = caption.match(/Telegram ID:\s*(\d+)/i) || caption.match(/ID:\s*(\d+)/i) || caption.match(/User ID:\s*(\d+)/i);
+    // Xabardagi Telegram ID ni qidiramiz (HTML teglarsiz qidirish xavfsizroq)
+    const tgIdMatch = caption.match(/Telegram ID:\s*(\d+)/i) || caption.match(/ID:\s*(\d+)/i);
     const itemMatch = caption.match(/Xarid:\s*(.+)/i);
-    const priceMatch = caption.match(/Summa:\s*(.+)/i) || caption.match(/To'lov summasi:\s*(.+)/i);
+    const priceMatch = caption.match(/Summa:\s*(.+)/i);
 
     if (tgIdMatch) {
       order = {
@@ -645,40 +617,36 @@ async function handleReceiptDecision(chatId, userId, data, message) {
         createdAt: new Date().toISOString(),
         status: "new"
       };
+      // Buyurtmani bazaga qo'shib qo'yamiz (Admin panelda ko'rinishi uchun)
       store.orders.unshift(order);
       saveStore(store);
     }
   }
 
-  if (!order) return send(chatId, "❌ Buyurtma topilmadi.");
+  if (!order) return send(chatId, "❌ Buyurtma topilmadi yoki ma'lumotlarni o'qib bo'lmadi.");
   
   if (order.status === "approved" || order.status === "rejected") {
     return send(chatId, "⚠️ Bu buyurtma allaqachon tekshirilgan.");
   }
 
   order.status = approved ? "approved" : "rejected";
-  saveStore(store);
-
-  // Sync with Web App for ALL admins
-  for (const adminId of ADMIN_IDS) {
-    await setMenuButton(adminId, adminId).catch(() => {});
+  // Agar bazada bo'lsa, statusni yangilab qo'yamiz
+  if (store.orders.find(o => String(o.id) === String(orderId))) {
+    saveStore(store);
   }
 
   if (approved) {
-    const successMsg = `✅🎉 <b>TABRIKLAYMIZ!</b>\n\n` +
-      `🎮 Sizning <b>${escapeHtml(order.item.name)}</b> xaridingiz tasdiqlandi.\n` +
-      `💰 Summa: <b>${money(order.item.priceUZS)}</b>\n\n` +
-      `🚀 Endi o'yinga kirishingiz mumkin. RageSMP bilan maroqli hordiq chiqaring!`;
-    
-    await sendRaw(order.userId, successMsg);
-    return send(chatId, `✅ <b>#${orderId}</b> buyurtma tasdiqlandi va foydalanuvchiga xabar yuborildi.`);
+    await sendRaw(
+      order.userId,
+      `✅🎉 <b>Chekingiz tasdiqlandi!</b>\n\n🎮 Endi o'yinga kirib-chiqib, sotib olgan narsalaringizni tekshirib ko'rishingiz mumkin.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>\n💰 Summa: <b>${order.item.priceUZS}</b>\n\n🔥 RageSMP bilan zavqlaning!`
+    );
+    return send(chatId, `✅ <b>#${orderId}</b> buyurtma tasdiqlandi.`);
   }
 
-  const rejectMsg = `❌ <b>TO'LOVINGIZ RAD ETILDI</b>\n\n` +
-    `Iltimos, to'lov chekini qaytadan tekshirib yuboring yoki admin bilan bog'laning.\n\n` +
-    `🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>`;
-    
-  await sendRaw(order.userId, rejectMsg);
+  await sendRaw(
+    order.userId,
+    `❌ <b>To'lovingiz bekor qilindi.</b>\n\nIltimos, supportga murojaat qiling yoki qaytadan to'lov qiling.\n\n🛒 Xarid: <b>${escapeHtml(order.item.name)}</b>`
+  );
   return send(chatId, `❌ <b>#${orderId}</b> buyurtma bekor qilindi.`);
 }
 
@@ -688,11 +656,10 @@ async function setMenuButton(chatId, userId) {
     
     // Adminlar uchun ma'lumotlarni sinxronizatsiya qilamiz
     if (isAdmin(userId)) {
-      const syncDataObj = {
-        txs: store.orders.slice(0, 100), // Oxirgi 100 ta buyurtma
+      const syncData = Buffer.from(JSON.stringify({
+        txs: store.orders.slice(0, 50), // Oxirgi 50 ta buyurtma
         users: Object.entries(store.users).map(([id, u]) => ({ ...u, id }))
-      };
-      const syncData = Buffer.from(JSON.stringify(syncDataObj)).toString("base64");
+      })).toString("base64");
       url += `?admin_sync=${syncData}`;
     }
 
